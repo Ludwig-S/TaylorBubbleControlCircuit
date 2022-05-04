@@ -1,6 +1,7 @@
 #include "stm32f4xx.h"                  // Device header
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 /*
 ToDo:
@@ -10,6 +11,56 @@ ToDo:
 
 */
 
+//___________
+// MACROS:
+#define maxAmountOfInputNumbers 10
+
+
+//___________________
+// GLOBAL VARIABLES:
+
+char command_char;
+struct inputString_struct_type
+{
+	int8_t index;
+	char inputChar[maxAmountOfInputNumbers];
+} inputString_struct;
+char valueOfParameter_string[maxAmountOfInputNumbers];
+
+enum boolean
+{
+	FALSE,
+	TRUE
+} helpMessageWasSent = FALSE;
+
+
+// this varialbe specifies the interpreted aim of the USART input:
+enum
+{
+	PARAMETER = 1,	// the USART input describes the parameter
+	VALUE = 2		// the USART input describes the value to which the parameter will be set
+} USART_InputSpecifier;
+
+
+struct PIDparams_type
+{
+	int32_t P;
+	int32_t I;
+	int32_t D;
+	int32_t S;
+} PIDparams;
+
+
+const char* helpMessage = "Type\n"
+						"P for setting P of PID\n"
+						"I for setting I of PID\n"
+						"D for setting I of PID\n"
+						"S for setting of setpoint of PID\n"
+						"A for reading analog input\n";
+
+
+//_____________
+// FUNCTIONS:
 void PWM_init(uint32_t dutyCycle)
 {
 	// init PA5
@@ -45,9 +96,12 @@ void usart2_init(void)
 		(GPIO_AFRL_AFRL2_2 | GPIO_AFRL_AFRL2_1 | GPIO_AFRL_AFRL2_0 | GPIO_AFRL_AFRL3_2 
 		| GPIO_AFRL_AFRL3_1 | GPIO_AFRL_AFRL3_0); // set PA2 to AF7 (USART2_TX) and PA3 to AF7 (USART2_RX)
 	USART2->CR1 |= (USART_CR1_TE|USART_CR1_RE);// enable transmitter and receiver
-	// Baud rate Infos (p. 808 reference manual)
+	// Baud rate Infos can be found on page 808 of reference manual)
 	USART2->BRR = 0x0683;// set baud rate to 9600 (with 16 MHz clock)
-	USART2->CR1 |= USART_CR1_UE;// enable USART2 module	
+	// enable USART2 interrupt:
+	USART2->CR1 |= USART_CR1_RXNEIE; // enable receive interrupt
+	NVIC_EnableIRQ(USART2_IRQn); // enabl USART2 interrupt in NVIC
+	USART2->CR1 |= USART_CR1_UE;// enable USART2 module
 }
 
 
@@ -73,54 +127,82 @@ char usart2_readChar(void){
 	else return '\0';
 }
 
-void setup()
-{
-    usart2_init();
 
-}
-
-void processReceivedChar(char c)
+void processReceivedCommandChar(char c)
 {
 	switch (c)
 	{
 	case 'p':
 		usart2_writeString("Please type value of P of PID:\n");
+		USART_InputSpecifier = VALUE;
+		helpMessageWasSent = FALSE;
+		
+		//strtod();
 		break;
 
 	case 'i':
 		usart2_writeString("Please type value of I of PID:\n");
+		helpMessageWasSent = FALSE;
 		break;
 
 	case 'd':
 		usart2_writeString("Please type value of D of PID:\n");
+		helpMessageWasSent = FALSE;
 		break;
 
 	case 's':
 		usart2_writeString("Please type value of setpoint of PID:\n");
+		helpMessageWasSent = FALSE;
 		break;
 
 	case 'a':
 		
+		helpMessageWasSent = FALSE;
 		break;
 
 	default:
-		break;
+		usart2_writeString(helpMessage);
+		helpMessageWasSent = TRUE;
+
 	}
 };
 
-void main()
-{
-	const char* helpMessage = "Type\np for setting P of PID\ni for setting I of PID\nd for setting I of PID\nS for setting of setpoint of PID\na for reading analog input\n";
-	char receivedChar;
 
-	struct PIDparams_type
+void resetInputStringStruct(struct inputString_struct_type* iStrStr_Pointer )
+{
+	size_t i = 0;
+	for (i = 0; i < maxAmountOfInputNumbers; i++)
 	{
-		int32_t P;
-		int32_t I;
-		int32_t D;
-	} PIDparams;
+		valueOfParameter_string[i] = '/0';
+	}
+	iStrStr_Pointer->index = 0;
+}
+
+
+
+// interrupt request handler:
+void USART2_IRQHandler(void)
+{
+	if (USART_InputSpecifier == PARAMETER)
+	{
+		command_char = usart2_readChar();
+	}
+	else if (USART_InputSpecifier == VALUE)
+	{
+		/* code */
+	}
 	
 
-    setup();
+}
+
+
+void main()
+{
+	USART_InputSpecifier = PARAMETER;
+	resetInputStringStruct(&inputString_struct);
+
+	usart2_init();	
 	usart2_writeString(helpMessage);
+
+
 }
