@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /*
 ToDo:
@@ -18,39 +19,31 @@ ToDo:
 
 //___________________
 // GLOBAL VARIABLES:
-
-char command_char;
-struct inputString_struct_type
+char inputParameter_char;
+struct inputValue_struct_type
 {
 	int8_t index;
 	char inputChar[maxAmountOfInputNumbers];
-} inputString_struct;
+} inputValue_struct;
 char valueOfParameter_string[maxAmountOfInputNumbers];
-
 enum boolean
 {
 	FALSE,
 	TRUE
 } helpMessageWasSent = FALSE;
-
-
 // this varialbe specifies the interpreted aim of the USART input:
 enum
 {
 	PARAMETER = 1,	// the USART input describes the parameter
 	VALUE = 2		// the USART input describes the value to which the parameter will be set
 } USART_InputSpecifier;
-
-
 struct PIDparams_type
 {
-	int32_t P;
-	int32_t I;
-	int32_t D;
-	int32_t S;
+	double P;
+	double I;
+	double D;
+	double S;
 } PIDparams;
-
-
 const char* helpMessage = "Type\n"
 						"P for setting P of PID\n"
 						"I for setting I of PID\n"
@@ -61,6 +54,7 @@ const char* helpMessage = "Type\n"
 
 //_____________
 // FUNCTIONS:
+
 void PWM_init(uint32_t dutyCycle)
 {
 	// init PA5
@@ -81,10 +75,12 @@ void PWM_init(uint32_t dutyCycle)
 	TIM2->CR1 |= TIM_CR1_CEN; 	// enable counter
 }
 
+
 void PWM_setDutyCycle(uint32_t dutyCycle)
 {
 	TIM2->CCR1 = dutyCycle;		// write duty cycle
 }
+
 
 void usart2_init(void)
 {
@@ -120,89 +116,152 @@ void usart2_writeString(char *msg_string)
 		usart2_writeChar(msg_string[i]);
 }
 
+
 char usart2_readChar(void){
-	if(USART2->SR & USART_SR_RXNE){ // if data is ready to be read
+	if (USART2->SR & USART_SR_RXNE){ // if data is ready to be read
 		return USART2->DR; // read received char and return it
 	}
 	else return '\0';
 }
 
 
-void processReceivedCommandChar(char c)
-{
-	switch (c)
-	{
-	case 'p':
-		usart2_writeString("Please type value of P of PID:\n");
-		USART_InputSpecifier = VALUE;
-		helpMessageWasSent = FALSE;
-		
-		//strtod();
-		break;
-
-	case 'i':
-		usart2_writeString("Please type value of I of PID:\n");
-		helpMessageWasSent = FALSE;
-		break;
-
-	case 'd':
-		usart2_writeString("Please type value of D of PID:\n");
-		helpMessageWasSent = FALSE;
-		break;
-
-	case 's':
-		usart2_writeString("Please type value of setpoint of PID:\n");
-		helpMessageWasSent = FALSE;
-		break;
-
-	case 'a':
-		
-		helpMessageWasSent = FALSE;
-		break;
-
-	default:
-		usart2_writeString(helpMessage);
-		helpMessageWasSent = TRUE;
-
-	}
-};
-
-
-void resetInputStringStruct(struct inputString_struct_type* iStrStr_Pointer )
+void resetInputValueStruct(struct inputValue_struct_type* iStrStr_Pointer, size_t stringSize)
 {
 	size_t i = 0;
-	for (i = 0; i < maxAmountOfInputNumbers; i++)
+	for (i = 0; i < stringSize; i++)
 	{
-		valueOfParameter_string[i] = '/0';
+		iStrStr_Pointer->inputChar[i] = '/0';
 	}
 	iStrStr_Pointer->index = 0;
 }
 
 
+void printParameterWasSetMessage(char parameterChar, double writtenValue)
+{
+	char message[40];
+	sprintf(message, "%c was set to %f", parameterChar, writtenValue);
+	usart2_writeString(message);
+}
+
 
 // interrupt request handler:
 void USART2_IRQHandler(void)
 {
+	char c = usart2_readChar();
+
 	if (USART_InputSpecifier == PARAMETER)
 	{
-		command_char = usart2_readChar();
+		inputParameter_char = c;
+		switch (inputParameter_char)
+		{
+			case 'P':
+			case 'p':
+				usart2_writeString("Please type P value of PID:\n");
+				USART_InputSpecifier = VALUE;
+				helpMessageWasSent = FALSE;
+				
+				//strtod();
+				break;
+			
+			case 'I':
+			case 'i':
+				usart2_writeString("Please type I value of PID:\n");
+				USART_InputSpecifier = VALUE;
+				helpMessageWasSent = FALSE;
+				break;
+
+			case 'D':
+			case 'd':
+				usart2_writeString("Please type D value of PID:\n");
+				USART_InputSpecifier = VALUE;
+				helpMessageWasSent = FALSE;
+				break;
+
+			case 'S':
+			case 's':
+				usart2_writeString("Please type setpoint of PID:\n");
+				USART_InputSpecifier = VALUE;
+				helpMessageWasSent = FALSE;
+				break;
+
+			case 'A':
+			case 'a':
+				// TODO: PRINT ANALOG INPUT			
+				helpMessageWasSent = FALSE;
+				break;
+
+			default:
+				usart2_writeString(helpMessage);
+				helpMessageWasSent = TRUE;
+		}
 	}
 	else if (USART_InputSpecifier == VALUE)
 	{
-		/* code */
-	}
-	
 
+		// check if digit and input buffer not full:
+		if (inputValue_struct.index < maxAmountOfInputNumbers && c >= 48 && c <= 57)
+		{
+			// process input digit:
+			inputValue_struct.inputChar[inputValue_struct.index] = c;
+			inputValue_struct.index++;
+		}		
+
+		// input stream of digits finished when enter pressed or buffer full
+		else if ((c == 13) || (inputValue_struct.index >= maxAmountOfInputNumbers))
+		{
+			char* cptr;
+			double finalValue = strtod(inputValue_struct.inputChar, cptr);
+			switch (inputParameter_char)
+			{
+				case 'P':
+				case 'p':
+					PIDparams.P = finalValue;
+					printParameterWasSetMessage('P', finalValue);
+					break;
+
+				case 'I':
+				case 'i':
+					PIDparams.I = finalValue;
+					printParameterWasSetMessage('I', finalValue);
+					break;
+
+				case 'D':
+				case 'd':
+					PIDparams.D = finalValue;
+					printParameterWasSetMessage('D', finalValue);
+					break;
+
+				case 'S':
+				case 's':
+					PIDparams.S = finalValue;
+					printParameterWasSetMessage('S', finalValue);
+					break;
+
+				default:
+					usart2_writeString("Oopsie Daisey! Something went wrong! :(\n");
+				
+			}
+
+		resetInputValueStruct(&inputValue_struct, maxAmountOfInputNumbers);
+
+		}
+
+
+	}
 }
 
 
 void main()
 {
 	USART_InputSpecifier = PARAMETER;
-	resetInputStringStruct(&inputString_struct);
+	resetInputValueStruct(&inputValue_struct, maxAmountOfInputNumbers);
 
 	usart2_init();	
 	usart2_writeString(helpMessage);
 
+	while (1)
+	{
+		//TODO: IMPLEMENT PID CONTROLLER WITH ANTI WINDUP
+	}
 
 }
