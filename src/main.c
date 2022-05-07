@@ -6,9 +6,10 @@
 
 /*
 ToDo:
+- test USART communication
 - change PWM pin, check PWM frequency for servo, higher PWM duty cycle resolution
-- set up PID parameters and standard text for USART communication
 - analog input
+- implement PID with anti wind up
 
 */
 
@@ -32,7 +33,7 @@ enum boolean
 	TRUE
 } helpMessageWasSent = FALSE;
 // this varialbe specifies the interpreted aim of the USART input:
-enum
+enum USART_InputSpecifier_type
 {
 	PARAMETER = 1,	// the USART input describes the parameter
 	VALUE = 2		// the USART input describes the value to which the parameter will be set
@@ -243,6 +244,7 @@ void USART2_IRQHandler(void)
 			}
 
 		resetInputValueStruct(&inputValue_struct, maxAmountOfInputNumbers);
+		USART_InputSpecifier = PARAMETER;
 
 		}
 
