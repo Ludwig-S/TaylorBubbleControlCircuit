@@ -6,7 +6,6 @@
 
 /*
 ToDo:
-- test USART communication
 - change PWM pin, check PWM frequency for servo, higher PWM duty cycle resolution
 - analog input
 - implement PID with anti wind up
@@ -15,7 +14,7 @@ ToDo:
 
 //___________
 // MACROS:
-#define maxAmountOfInputNumbers 10
+#define maxAmountOfInputDigits 10
 
 
 //___________________
@@ -24,9 +23,9 @@ char inputParameter_char;
 struct inputValue_struct_type
 {
 	int8_t index;
-	char inputChar[maxAmountOfInputNumbers];
+	char inputChar[maxAmountOfInputDigits];
 } inputValue_struct;
-char valueOfParameter_string[maxAmountOfInputNumbers];
+char valueOfParameter_string[maxAmountOfInputDigits];
 enum boolean
 {
 	FALSE,
@@ -45,12 +44,7 @@ struct PIDparams_type
 	double D;
 	double S;
 } PIDparams;
-const char* helpMessage = "Type\n"
-						"P for setting P of PID\n"
-						"I for setting I of PID\n"
-						"D for setting I of PID\n"
-						"S for setting of setpoint of PID\n"
-						"A for reading analog input\n";
+const char* helpMessage = "Type P OR I OR D for writing PID parameters or S for writing setpoint OR A for reading analog input\n";
 
 
 //_____________
@@ -137,10 +131,10 @@ void resetInputValueStruct(struct inputValue_struct_type* iStrStr_Pointer, size_
 }
 
 
-void printParameterWasSetMessage(char parameterChar, double writtenValue)
+void printParameterWasSetMessage(char parameterChar)
 {
 	char message[40];
-	sprintf(message, "%c was set to %f", parameterChar, writtenValue);
+	sprintf(message, " was written to %c\n", parameterChar);
 	usart2_writeString(message);
 }
 
@@ -157,7 +151,7 @@ void USART2_IRQHandler(void)
 		{
 			case 'P':
 			case 'p':
-				usart2_writeString("Please type P value of PID:\n");
+				usart2_writeString("Please type P value of PID: ");
 				USART_InputSpecifier = VALUE;
 				helpMessageWasSent = FALSE;
 				
@@ -166,21 +160,21 @@ void USART2_IRQHandler(void)
 			
 			case 'I':
 			case 'i':
-				usart2_writeString("Please type I value of PID:\n");
+				usart2_writeString("Please type I value of PID: ");
 				USART_InputSpecifier = VALUE;
 				helpMessageWasSent = FALSE;
 				break;
 
 			case 'D':
 			case 'd':
-				usart2_writeString("Please type D value of PID:\n");
+				usart2_writeString("Please type D value of PID: ");
 				USART_InputSpecifier = VALUE;
 				helpMessageWasSent = FALSE;
 				break;
 
 			case 'S':
 			case 's':
-				usart2_writeString("Please type setpoint of PID:\n");
+				usart2_writeString("Please type setpoint of PID: ");
 				USART_InputSpecifier = VALUE;
 				helpMessageWasSent = FALSE;
 				break;
@@ -199,54 +193,69 @@ void USART2_IRQHandler(void)
 	else if (USART_InputSpecifier == VALUE)
 	{
 
-		// check if digit and input buffer not full:
-		if (inputValue_struct.index < maxAmountOfInputNumbers && c >= 48 && c <= 57)
+		// check if inputChar is digit or priod and input buffer not full:
+		if (inputValue_struct.index < maxAmountOfInputDigits && ((c >= 48 && c <= 57)||c==46))
 		{
 			// process input digit:
 			inputValue_struct.inputChar[inputValue_struct.index] = c;
 			inputValue_struct.index++;
+			usart2_writeChar(c);
 		}		
 
 		// input stream of digits finished when enter pressed or buffer full
-		else if ((c == 13) || (inputValue_struct.index >= maxAmountOfInputNumbers))
+		else if ((c == 13) || (inputValue_struct.index >= maxAmountOfInputDigits))
 		{
+			char inputChar_part[inputValue_struct.index];
+			size_t i;
+			for (i = 0; i < inputValue_struct.index; i++)
+			{
+				inputChar_part[i] = inputValue_struct.inputChar[i];
+			}
 			char* cptr;
-			double finalValue = strtod(inputValue_struct.inputChar, cptr);
+			double finalValue = strtod(inputChar_part, cptr);
 			switch (inputParameter_char)
 			{
 				case 'P':
 				case 'p':
 					PIDparams.P = finalValue;
-					printParameterWasSetMessage('P', finalValue);
+					printParameterWasSetMessage('P');
 					break;
 
 				case 'I':
 				case 'i':
 					PIDparams.I = finalValue;
-					printParameterWasSetMessage('I', finalValue);
+					printParameterWasSetMessage('I');
 					break;
 
 				case 'D':
 				case 'd':
 					PIDparams.D = finalValue;
-					printParameterWasSetMessage('D', finalValue);
+					printParameterWasSetMessage('D');
 					break;
 
 				case 'S':
 				case 's':
 					PIDparams.S = finalValue;
-					printParameterWasSetMessage('S', finalValue);
+					printParameterWasSetMessage('S');
 					break;
 
 				default:
 					usart2_writeString("Oopsie Daisey! Something went wrong! :(\n");
-				
+			
+			
 			}
-
-		resetInputValueStruct(&inputValue_struct, maxAmountOfInputNumbers);
-		USART_InputSpecifier = PARAMETER;
+			resetInputValueStruct(&inputValue_struct, maxAmountOfInputDigits);
+			USART_InputSpecifier = PARAMETER;	
 
 		}
+
+		// value input cancelled if escape is pressed:
+		else if (c == 27)
+		{
+			resetInputValueStruct(&inputValue_struct, maxAmountOfInputDigits);
+			usart2_writeString(" Input cancelled!\n");
+		}
+		
 
 
 	}
@@ -256,7 +265,7 @@ void USART2_IRQHandler(void)
 void main()
 {
 	USART_InputSpecifier = PARAMETER;
-	resetInputValueStruct(&inputValue_struct, maxAmountOfInputNumbers);
+	resetInputValueStruct(&inputValue_struct, maxAmountOfInputDigits);
 
 	usart2_init();	
 	usart2_writeString(helpMessage);
