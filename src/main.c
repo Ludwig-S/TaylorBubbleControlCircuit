@@ -5,6 +5,17 @@
 #include <string.h>
 
 /*
+_______________________________________________
+USART settings: 
+Baudrate: 9600 BdPS
+8 data bits
+1 stop bit
+no parity, no flow control
+_______________________________________________
+*/
+
+
+/*
 ToDo:
 - change PWM pin, check PWM frequency for servo, higher PWM duty cycle resolution
 - analog input
@@ -31,7 +42,7 @@ enum boolean
 	FALSE,
 	TRUE
 } helpMessageWasSent = FALSE;
-// this varialbe specifies the interpreted aim of the USART input:
+// this varialbe specifies the interpreted meaning of the USART input:
 enum USART_InputSpecifier_type
 {
 	PARAMETER = 1,	// the USART input describes the parameter
@@ -186,7 +197,10 @@ void USART2_IRQHandler(void)
 				break;
 
 			default:
-				usart2_writeString(helpMessage);
+				if (helpMessageWasSent == FALSE)
+				{
+					usart2_writeString(helpMessage);
+				}				
 				helpMessageWasSent = TRUE;
 		}
 	}
@@ -255,14 +269,11 @@ void USART2_IRQHandler(void)
 			resetInputValueStruct(&inputValue_struct, maxAmountOfInputDigits);
 			usart2_writeString(" Input cancelled!\n");
 		}
-		
-
-
 	}
 }
 
 
-void main()
+int main()
 {
 	USART_InputSpecifier = PARAMETER;
 	resetInputValueStruct(&inputValue_struct, maxAmountOfInputDigits);
