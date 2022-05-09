@@ -9,13 +9,23 @@
 /*
 _______________________________________________
 USART settings: 
-Baudrate: 9600 BdPS
+Baudrate: 9600 BdpS
 8 data bits
 1 stop bit
 no parity, no flow control
 _______________________________________________
-*/
+_______________________________________________
+GPIO pin overview:
 
+PA1		Analog Input
+PA2		USART2_RX
+PA3		USART2_TX
+PA15	PWM output => AF1 (TIM2_CH1/ TIM2_ETR)
+
+Important:
+Do not overwrite PA13 and PA14, because the uC uses these pins for flashing!
+______________________________________________
+*/
 
 /*
 ToDo:
@@ -28,7 +38,17 @@ ToDo:
 //___________
 // MACROS:
 #define maxAmountOfInputDigits 10
+#define ADCREFVOLT 3.3
 
+// REGISTER EDITING MACROS:
+#define SET_BIT(REG, BIT)     ((REG) |= (BIT))
+#define CLEAR_BIT(REG, BIT)   ((REG) &= ~(BIT))
+#define READ_BIT(REG, BIT)    ((REG) & (BIT))
+#define CLEAR_REG(REG)        ((REG) = (0x0))
+#define WRITE_REG(REG, VAL)   ((REG) = (VAL))
+#define READ_REG(REG)         ((REG))
+#define MODIFY_REG(REG, CLEARMASK, SETMASK)  WRITE_REG((REG), (((READ_REG(REG)) & (~(CLEARMASK))) | (SETMASK)))
+#define POSITION_VAL(VAL)     (__CLZ(__RBIT(VAL)))
 
 //___________________
 // GLOBAL VARIABLES:
@@ -104,7 +124,7 @@ void usart2_init(void)
 	USART2->BRR = 0x0683;// set baud rate to 9600 (with 16 MHz clock)
 	// enable USART2 interrupt:
 	USART2->CR1 |= USART_CR1_RXNEIE; // enable receive interrupt
-	NVIC_EnableIRQ(USART2_IRQn); // enabl USART2 interrupt in NVIC
+	NVIC_EnableIRQ(USART2_IRQn); // enable USART2 interrupt in NVIC
 	USART2->CR1 |= USART_CR1_UE;// enable USART2 module
 }
 
@@ -133,17 +153,14 @@ char usart2_readChar(void){
 }
 
 
-
-
-
-void resetInputValueStruct(struct inputValue_struct_type* iStrStr_Pointer, size_t stringSize)
+void resetInputValueStruct(struct inputValue_struct_type* iValStr_pointer, size_t stringSize)
 {
 	size_t i = 0;
 	for (i = 0; i < stringSize; i++)
 	{
-		iStrStr_Pointer->inputChar[i] = '/0';
+		iValStr_pointer->inputChar[i] = '/0';
 	}
-	iStrStr_Pointer->index = 0;
+	iValStr_pointer->index = 0;
 }
 
 
@@ -192,6 +209,7 @@ void usart2_writePIDParameters(struct PIDparams_type PID)
 	usart2_writeString(convertDoubleToString(PID.S));
 	usart2_writeString("\n");
 }
+
 
 // interrupt request handler:
 void USART2_IRQHandler(void)
@@ -261,7 +279,7 @@ void USART2_IRQHandler(void)
 		}		
 
 		// input stream of digits finished when enter pressed or buffer full
-		else if ((c == 13) || (inputValue_struct.index >= maxAmountOfInputDigits-2))
+		else if ((c == 13) || (inputValue_struct.index >= maxAmountOfInputDigits))
 		{
 			char* inputChar_part = calloc(inputValue_struct.index, sizeof(char));
 			size_t i;
@@ -319,6 +337,24 @@ void USART2_IRQHandler(void)
 	}
 }
 
+void ADC1_init()
+{
+	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN; 	// clock to Port A
+	GPIOA->MODER |= (GPIO_MODER_MODE1_0 || GPIO_MODER_MODE1_1); // set PA1 to analog mode (MODER1 = 0b11)
+	RCC->APB2ENR |= RCC_APB2ENR_ADC1EN; // enable clock to ADC1
+	ADC1->CR2 |= ADC_CR2_ADON; // enable ADC1
+
+}
+
+uint32_t ADC1_read()
+{
+	if (ADC1->SR & ADC_SR_EOC) // if end of conversion is reached
+	{
+		uint32_t ADCdata = ADC1->DR;// read data register		
+	}
+	
+
+}
 
 int main()
 {
@@ -330,7 +366,7 @@ int main()
 
 	while (1)
 	{
-		//TODO: IMPLEMENT PID CONTROLLER WITH ANTI WINDUP
+		double error = PIDparams.S
 	}
 
 }
