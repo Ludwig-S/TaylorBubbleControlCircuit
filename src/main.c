@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+
 /*
 _______________________________________________
 USART settings: 
@@ -18,7 +20,7 @@ _______________________________________________
 /*
 ToDo:
 - change PWM pin, check PWM frequency for servo, higher PWM duty cycle resolution
-- analog input
+- analog input, work around for printing of analog input
 - implement PID with anti wind up
 
 */
@@ -47,7 +49,7 @@ enum USART_InputSpecifier_type
 {
 	PARAMETER = 1,	// the USART input describes the parameter
 	VALUE = 2		// the USART input describes the value to which the parameter will be set
-} USART_InputSpecifier;
+} inputSpecifier;
 struct PIDparams_type
 {
 	double P;
@@ -131,6 +133,9 @@ char usart2_readChar(void){
 }
 
 
+
+
+
 void resetInputValueStruct(struct inputValue_struct_type* iStrStr_Pointer, size_t stringSize)
 {
 	size_t i = 0;
@@ -150,12 +155,50 @@ void printParameterWasSetMessage(char parameterChar)
 }
 
 
+// similar to: https://stackoverflow.com/questions/905928/using-floats-with-sprintf-in-embedded-c:
+char *convertDoubleToString(double input)
+{
+	static char str[50];
+	// reset static char array:
+	size_t sizeOfStr = sizeof(str)/sizeof(str[0]);
+	size_t i;
+	for (i = 0; i < sizeOfStr; i++)
+	{
+		str[i] = 0;
+	}
+	// building the output string:
+	char *tmpSign = (input < 0) ? "-" : "";
+	double tmpVal = (input < 0) ? -input : input;
+
+	int32_t tmpInt1 = tmpVal;                  // Get the integer (678).
+	double tmpFrac = tmpVal - tmpInt1;      // Get fraction (0.0123).
+	int32_t tmpInt2 = trunc(tmpFrac * 10000);  // Turn into integer (123).
+
+	// Print as parts, note that you need 0-padding for fractional bit.
+	sprintf (str, "%s%ld.%04ld", tmpSign, tmpInt1, tmpInt2);
+	return str;
+}
+
+
+void usart2_writePIDParameters(struct PIDparams_type PID)
+{
+	usart2_writeString("P: ");
+	usart2_writeString(convertDoubleToString(PID.P));
+	usart2_writeString("  I: ");
+	usart2_writeString(convertDoubleToString(PID.I));
+	usart2_writeString("  D: ");
+	usart2_writeString(convertDoubleToString(PID.D));
+	usart2_writeString("  S: ");
+	usart2_writeString(convertDoubleToString(PID.S));
+	usart2_writeString("\n");
+}
+
 // interrupt request handler:
 void USART2_IRQHandler(void)
 {
 	char c = usart2_readChar();
 
-	if (USART_InputSpecifier == PARAMETER)
+	if (inputSpecifier == PARAMETER)
 	{
 		inputParameter_char = c;
 		switch (inputParameter_char)
@@ -163,7 +206,7 @@ void USART2_IRQHandler(void)
 			case 'P':
 			case 'p':
 				usart2_writeString("Please type P value of PID: ");
-				USART_InputSpecifier = VALUE;
+				inputSpecifier = VALUE;
 				helpMessageWasSent = FALSE;
 				
 				//strtod();
@@ -172,21 +215,21 @@ void USART2_IRQHandler(void)
 			case 'I':
 			case 'i':
 				usart2_writeString("Please type I value of PID: ");
-				USART_InputSpecifier = VALUE;
+				inputSpecifier = VALUE;
 				helpMessageWasSent = FALSE;
 				break;
 
 			case 'D':
 			case 'd':
 				usart2_writeString("Please type D value of PID: ");
-				USART_InputSpecifier = VALUE;
+				inputSpecifier = VALUE;
 				helpMessageWasSent = FALSE;
 				break;
 
 			case 'S':
 			case 's':
 				usart2_writeString("Please type setpoint of PID: ");
-				USART_InputSpecifier = VALUE;
+				inputSpecifier = VALUE;
 				helpMessageWasSent = FALSE;
 				break;
 
@@ -200,14 +243,15 @@ void USART2_IRQHandler(void)
 				if (helpMessageWasSent == FALSE)
 				{
 					usart2_writeString(helpMessage);
+					usart2_writePIDParameters(PIDparams);
 				}				
 				helpMessageWasSent = TRUE;
 		}
 	}
-	else if (USART_InputSpecifier == VALUE)
+	else if (inputSpecifier == VALUE)
 	{
 
-		// check if inputChar is digit or priod and input buffer not full:
+		// check if inputChar is digit or period and input buffer not full:
 		if (inputValue_struct.index < maxAmountOfInputDigits && ((c >= 48 && c <= 57)||c==46))
 		{
 			// process input digit:
@@ -217,9 +261,9 @@ void USART2_IRQHandler(void)
 		}		
 
 		// input stream of digits finished when enter pressed or buffer full
-		else if ((c == 13) || (inputValue_struct.index >= maxAmountOfInputDigits))
+		else if ((c == 13) || (inputValue_struct.index >= maxAmountOfInputDigits-2))
 		{
-			char inputChar_part[inputValue_struct.index];
+			char* inputChar_part = calloc(inputValue_struct.index, sizeof(char));
 			size_t i;
 			for (i = 0; i < inputValue_struct.index; i++)
 			{
@@ -259,7 +303,8 @@ void USART2_IRQHandler(void)
 			
 			}
 			resetInputValueStruct(&inputValue_struct, maxAmountOfInputDigits);
-			USART_InputSpecifier = PARAMETER;	
+			inputSpecifier = PARAMETER;	
+			usart2_writePIDParameters(PIDparams);
 
 		}
 
@@ -267,7 +312,9 @@ void USART2_IRQHandler(void)
 		else if (c == 27)
 		{
 			resetInputValueStruct(&inputValue_struct, maxAmountOfInputDigits);
+			inputSpecifier = PARAMETER;
 			usart2_writeString(" Input cancelled!\n");
+			usart2_writePIDParameters(PIDparams);
 		}
 	}
 }
@@ -275,7 +322,7 @@ void USART2_IRQHandler(void)
 
 int main()
 {
-	USART_InputSpecifier = PARAMETER;
+	inputSpecifier = PARAMETER;
 	resetInputValueStruct(&inputValue_struct, maxAmountOfInputDigits);
 
 	usart2_init();	
