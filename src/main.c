@@ -75,9 +75,10 @@ struct PIDparams_type
 	double P;
 	double I;
 	double D;
-	double S;
+	double S; // setpoint
+	double W; // wind up limit
 } PIDparams;
-const char* helpMessage = "Type P OR I OR D for writing PID parameters or S for writing setpoint OR A for reading analog input\n";
+const char* helpMessage = "Type 'P' OR 'I' OR 'D' for writing PID parameters OR 'S' for writing setpoint OR 'W' for writing wind up limit OR 'A' for reading analog input\n";
 
 
 //_____________
@@ -167,7 +168,7 @@ void resetInputValueStruct(struct inputValue_struct_type* iValStr_pointer, size_
 void printParameterWasSetMessage(char parameterChar)
 {
 	char message[40];
-	sprintf(message, " was written to %c\n", parameterChar);
+	sprintf(message, " was written to %c ", parameterChar);
 	usart2_writeString(message);
 }
 
@@ -207,6 +208,8 @@ void usart2_writePIDParameters(struct PIDparams_type PID)
 	usart2_writeString(convertDoubleToString(PID.D));
 	usart2_writeString("  S: ");
 	usart2_writeString(convertDoubleToString(PID.S));
+	usart2_writeString("  W: ");
+	usart2_writeString(convertDoubleToString(PID.W));
 	usart2_writeString("\n");
 }
 
@@ -247,6 +250,13 @@ void USART2_IRQHandler(void)
 			case 'S':
 			case 's':
 				usart2_writeString("Please type setpoint of PID: ");
+				inputSpecifier = VALUE;
+				helpMessageWasSent = FALSE;
+				break;
+
+			case 'W':
+			case 'w':
+				usart2_writeString("Please wind up limit of PID: ");
 				inputSpecifier = VALUE;
 				helpMessageWasSent = FALSE;
 				break;
@@ -315,6 +325,13 @@ void USART2_IRQHandler(void)
 					printParameterWasSetMessage('S');
 					break;
 
+				case 'W':
+				case 'w':
+					PIDparams.W = finalValue;
+					printParameterWasSetMessage('W');
+					break;
+
+
 				default:
 					usart2_writeString("Oopsie Daisey! Something went wrong! :(\n");
 			
@@ -331,7 +348,7 @@ void USART2_IRQHandler(void)
 		{
 			resetInputValueStruct(&inputValue_struct, maxAmountOfInputDigits);
 			inputSpecifier = PARAMETER;
-			usart2_writeString(" Input cancelled!\n");
+			usart2_writeString(" Input cancelled! ");
 			usart2_writePIDParameters(PIDparams);
 		}
 	}
@@ -340,20 +357,22 @@ void USART2_IRQHandler(void)
 void ADC1_init()
 {
 	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN; 	// clock to Port A
-	GPIOA->MODER |= (GPIO_MODER_MODE1_0 || GPIO_MODER_MODE1_1); // set PA1 to analog mode (MODER1 = 0b11)
+	MODIFY_REG(GPIOA->MODER, GPIO_MODER_MODE1, GPIO_MODER_MODE1_0 || GPIO_MODER_MODE1_1); // set PA1 to analog mode (MODER1 = 0b11)
+	// GPIOA->MODER |= (GPIO_MODER_MODE1_0 || GPIO_MODER_MODE1_1);
 	RCC->APB2ENR |= RCC_APB2ENR_ADC1EN; // enable clock to ADC1
+	ADC1->CR2 |= ADC_CR2_CONT; // enable continuous mode
 	ADC1->CR2 |= ADC_CR2_ADON; // enable ADC1
-
+	ADC1->CR1 |= ADC_CR1_SCAN; // select scan mode
+	MODIFY_REG(ADC1->SQR3, ADC_SQR1_L, ADC_SQR1_L_0); // first ADC channel to scan is Channel 1 (PA1)
+	ADC1->CR2 |= ADC_CR2_SWSTART; // start conversion
 }
 
 uint32_t ADC1_read()
 {
 	if (ADC1->SR & ADC_SR_EOC) // if end of conversion is reached
 	{
-		uint32_t ADCdata = ADC1->DR;// read data register		
+		return ADC1->DR;// read data register		
 	}
-	
-
 }
 
 int main()
@@ -366,7 +385,7 @@ int main()
 
 	while (1)
 	{
-		double error = PIDparams.S
+		double error = PIDparams.S;
 	}
 
 }
