@@ -8,7 +8,7 @@
 /*
 ToDo:
 - Test analog input and PID
-- PID output to DAC; alternatively to PWM: change PWM pin, check PWM frequency for servo, higher PWM duty cycle resolution
+- PID output to DAC; alternatively PID to PWM: change PWM pin, check PWM frequency for servo, higher PWM duty cycle resolution
 */
 
 
@@ -376,23 +376,17 @@ void ADC1_init()
 	MODIFY_REG(GPIOA->MODER, GPIO_MODER_MODE1, GPIO_MODER_MODE1_0 || GPIO_MODER_MODE1_1); // set PA1 to analog mode (MODER1 = 0b11)
 	// GPIOA->MODER |= (GPIO_MODER_MODE1_0 || GPIO_MODER_MODE1_1);
 	RCC->APB2ENR |= RCC_APB2ENR_ADC1EN; // enable clock to ADC1
-	ADC1->CR2 |= ADC_CR2_CONT; // enable continuous mode
-	ADC1->CR2 |= ADC_CR2_ADON; // enable ADC1
-	ADC1->CR1 |= ADC_CR1_SCAN; // select scan mode
 	MODIFY_REG(ADC1->SQR3, ADC_SQR3_SQ1, ADC_SQR3_SQ1_0); // first ADC channel to scan is Channel 1 (PA1)
-	ADC1->CR2 |= ADC_CR2_SWSTART; // start conversion
+	// ADC1->CR2 |= ADC_CR2_CONT; // enable continuous mode
+	ADC1->CR2 |= ADC_CR2_ADON; // enable ADC1
+	// ADC1->CR1 |= ADC_CR1_SCAN; // select scan mode
 }
 
 uint32_t ADC1_read()
 {
-	if (ADC1->SR & ADC_SR_EOC) // if end of conversion is reached
-	{
-		return ADC1->DR;// read data register		
-	}
-	else 
-	{
-		return 0ul;
-	}
+	ADC1->CR2 |= ADC_CR2_SWSTART; // start conversion
+	while (!(ADC1->SR & ADC_SR_EOC)) // wait until end of conversion is reached	
+	return ADC1->DR;// read data register		
 }
 
 int main()
