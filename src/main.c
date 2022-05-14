@@ -5,6 +5,13 @@
 #include <string.h>
 
 
+/*
+ToDo:
+- Test analog input and PID
+- PID output to DAC; alternatively to PWM: change PWM pin, check PWM frequency for servo, higher PWM duty cycle resolution
+*/
+
+
 
 /*
 _______________________________________________
@@ -27,18 +34,13 @@ Do not overwrite PA13 and PA14, because the uC uses these pins for flashing!
 ______________________________________________
 */
 
-/*
-ToDo:
-- change PWM pin, check PWM frequency for servo, higher PWM duty cycle resolution
-- analog input, work around for printing of analog input
-- implement PID with anti wind up
-
-*/
 
 //___________
 // MACROS:
-#define maxAmountOfInputDigits 10
-#define ADCREFVOLT 3.3
+#define MAX_AMOUNT_INPUT_DIGITS 10
+#define ADC_REFVOLT 3.3
+#define ADC_SAMPLEPERIOD (15/90e6) // ADC stabilisation time (3 cycles) + conversion time (12 cycles)
+// ADC1 gets clock from APB2 (90MHz)
 
 // REGISTER EDITING MACROS:
 #define SET_BIT(REG, BIT)     ((REG) |= (BIT))
@@ -56,9 +58,9 @@ char inputParameter_char;
 struct inputValue_struct_type
 {
 	int8_t index;
-	char inputChar[maxAmountOfInputDigits];
+	char inputChar[MAX_AMOUNT_INPUT_DIGITS];
 } inputValue_struct;
-char valueOfParameter_string[maxAmountOfInputDigits];
+char valueOfParameter_string[MAX_AMOUNT_INPUT_DIGITS];
 enum boolean
 {
 	FALSE,
@@ -77,6 +79,7 @@ struct PIDparams_type
 	double D;
 	double S; // setpoint
 	double W; // wind up limit
+	int8_t E; // sign of error
 } PIDparams;
 const char* helpMessage = "Type 'P' OR 'I' OR 'D' for writing PID parameters OR 'S' for writing setpoint OR 'W' for writing wind up limit OR 'A' for reading analog input\n";
 
@@ -210,7 +213,14 @@ void usart2_writePIDParameters(struct PIDparams_type PID)
 	usart2_writeString(convertDoubleToString(PID.S));
 	usart2_writeString("  W: ");
 	usart2_writeString(convertDoubleToString(PID.W));
-	usart2_writeString("\n");
+	if (PID.E==1)
+	{
+		usart2_writeString("  Error = setpoint - actual value\n");
+	}
+	else if (PID.E==1)
+	{
+		usart2_writeString("  Error = actual value - setpoint\n");
+	}
 }
 
 
@@ -256,7 +266,7 @@ void USART2_IRQHandler(void)
 
 			case 'W':
 			case 'w':
-				usart2_writeString("Please wind up limit of PID: ");
+				usart2_writeString("Please type wind up limit of PID: ");
 				inputSpecifier = VALUE;
 				helpMessageWasSent = FALSE;
 				break;
@@ -266,6 +276,11 @@ void USART2_IRQHandler(void)
 				// TODO: PRINT ANALOG INPUT			
 				helpMessageWasSent = FALSE;
 				break;
+
+			case '-':
+				PIDparams.E = -PIDparams.E;
+				usart2_writeString("Sign of Error was inverted! ");
+				helpMessageWasSent = FALSE;
 
 			default:
 				if (helpMessageWasSent == FALSE)
@@ -280,7 +295,7 @@ void USART2_IRQHandler(void)
 	{
 
 		// check if inputChar is digit or period and input buffer not full:
-		if (inputValue_struct.index < maxAmountOfInputDigits && ((c >= 48 && c <= 57)||c==46))
+		if (inputValue_struct.index < MAX_AMOUNT_INPUT_DIGITS && ((c >= 48 && c <= 57)||c==46))
 		{
 			// process input digit:
 			inputValue_struct.inputChar[inputValue_struct.index] = c;
@@ -289,7 +304,7 @@ void USART2_IRQHandler(void)
 		}		
 
 		// input stream of digits finished when enter pressed or buffer full
-		else if ((c == 13) || (inputValue_struct.index >= maxAmountOfInputDigits))
+		else if ((c == 13) || (inputValue_struct.index >= MAX_AMOUNT_INPUT_DIGITS))
 		{
 			char* inputChar_part = calloc(inputValue_struct.index, sizeof(char));
 			size_t i;
@@ -337,7 +352,7 @@ void USART2_IRQHandler(void)
 			
 			
 			}
-			resetInputValueStruct(&inputValue_struct, maxAmountOfInputDigits);
+			resetInputValueStruct(&inputValue_struct, MAX_AMOUNT_INPUT_DIGITS);
 			inputSpecifier = PARAMETER;	
 			usart2_writePIDParameters(PIDparams);
 
@@ -346,12 +361,13 @@ void USART2_IRQHandler(void)
 		// value input cancelled if escape is pressed:
 		else if (c == 27)
 		{
-			resetInputValueStruct(&inputValue_struct, maxAmountOfInputDigits);
+			resetInputValueStruct(&inputValue_struct, MAX_AMOUNT_INPUT_DIGITS);
 			inputSpecifier = PARAMETER;
 			usart2_writeString(" Input cancelled! ");
 			usart2_writePIDParameters(PIDparams);
 		}
 	}
+	// ToDo: reset pending bit
 }
 
 void ADC1_init()
@@ -363,7 +379,7 @@ void ADC1_init()
 	ADC1->CR2 |= ADC_CR2_CONT; // enable continuous mode
 	ADC1->CR2 |= ADC_CR2_ADON; // enable ADC1
 	ADC1->CR1 |= ADC_CR1_SCAN; // select scan mode
-	MODIFY_REG(ADC1->SQR3, ADC_SQR1_L, ADC_SQR1_L_0); // first ADC channel to scan is Channel 1 (PA1)
+	MODIFY_REG(ADC1->SQR3, ADC_SQR3_SQ1, ADC_SQR3_SQ1_0); // first ADC channel to scan is Channel 1 (PA1)
 	ADC1->CR2 |= ADC_CR2_SWSTART; // start conversion
 }
 
@@ -373,19 +389,39 @@ uint32_t ADC1_read()
 	{
 		return ADC1->DR;// read data register		
 	}
+	else 
+	{
+		return 0ul;
+	}
 }
 
 int main()
 {
 	inputSpecifier = PARAMETER;
-	resetInputValueStruct(&inputValue_struct, maxAmountOfInputDigits);
+	resetInputValueStruct(&inputValue_struct, MAX_AMOUNT_INPUT_DIGITS);
 
 	usart2_init();	
 	usart2_writeString(helpMessage);
 
 	while (1)
 	{
-		double error = PIDparams.S;
+		double error[2];
+		double actualValue = ADC1_read(); // read new actual value
+		error[1] = error[0]; // shift old error
+		error[0] = (PIDparams.S - actualValue) * PIDparams.E; // calculate new error
+		double pOutput = PIDparams.P * error[0];
+		double dOutput = PIDparams.D * (error[0] - error[1]) / ADC_SAMPLEPERIOD;
+		// calculate integer part of output
+		static double iOutput; // static to keep value between loop increments
+		if (iOutput < PIDparams.W)
+		{
+			iOutput = PIDparams.I * error[0] * ADC_SAMPLEPERIOD;
+		}
+		else
+		{
+			iOutput = PIDparams.W;
+		}
+		double output = pOutput + iOutput + dOutput;
+		// ToDo: DAC
 	}
-
 }
