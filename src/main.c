@@ -81,7 +81,7 @@ struct PIDparams_type
 	double W; // wind up limit
 	int8_t E; // sign of error
 } PIDparams;
-const char* helpMessage = "Type 'P' OR 'I' OR 'D' for writing PID parameters OR 'S' for writing setpoint OR 'W' for writing wind up limit OR 'A' for reading analog input\n";
+const char* helpMessage = "Type 'P' OR 'I' OR 'D' for writing PID gain parameters OR 'A' for reading analog input OR 'S' for writing setpoint OR 'W' for writing wind up limit OR 'T' for writing time constant of low pass filter for derivative part\n";
 
 
 //_____________
@@ -399,6 +399,10 @@ int main()
 
 	while (1)
 	{
+		// new PID implementation:
+
+
+		/* old PID implementation
 		double error[2];
 		double actualValue = ADC1_read(); // read new actual value
 		error[1] = error[0]; // shift old error
@@ -413,9 +417,10 @@ int main()
 		}
 		else
 		{
-			iOutput = PIDparams.W;
+			iOutput = PIDparams.W; // anti wind up
 		}
 		double output = pOutput + iOutput + dOutput;
 		// ToDo: DAC
+		*/
 	}
 }
