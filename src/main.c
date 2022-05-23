@@ -1,4 +1,5 @@
 #include "stm32f4xx.h"                  // Device header
+#include "PID.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,6 +8,7 @@
 
 /*
 ToDo:
+- update new PID implementation
 - Test analog input and PID
 - PID output to DAC; alternatively PID to PWM: change PWM pin, check PWM frequency for servo, higher PWM duty cycle resolution
 */
@@ -39,8 +41,22 @@ ______________________________________________
 // MACROS:
 #define MAX_AMOUNT_INPUT_DIGITS 10
 #define ADC_REFVOLT 3.3
-#define ADC_SAMPLEPERIOD (15/90e6) // ADC stabilisation time (3 cycles) + conversion time (12 cycles)
-// ADC1 gets clock from APB2 (90MHz)
+#define ADC_SAMPLEPERIOD (15/90e6) // ADC stabilisation time (3 cycles) + conversion time (12 cycles) = 15 cycles
+									// ADC1 gets clock from APB2 (90MHz)
+/* Initial controller parameters */
+#define PID_SIGN 1
+#define PID_SETPOINT 5.0f
+#define PID_KP  2.0f
+#define PID_KI  0.5f
+#define PID_KD  0.25f
+
+#define PID_TAU 0.02f
+
+#define PID_OUT_LIM_MIN  0
+#define PID_OUT_LIM_MAX  100.0f
+
+#define PID_INT_LIM_MIN  0
+#define PID_INT_LIM_MAX  5.0f
 
 // REGISTER EDITING MACROS:
 #define SET_BIT(REG, BIT)     ((REG) |= (BIT))
@@ -54,6 +70,12 @@ ______________________________________________
 
 //___________________
 // GLOBAL VARIABLES:
+PIDController pid = {PID_SETPOINT, PID_SIGN, PID_KP, PID_KI, PID_KD,
+						PID_TAU,
+						PID_OUT_LIM_MIN, PID_OUT_LIM_MAX,
+			PID_INT_LIM_MIN, PID_INT_LIM_MAX,
+						ADC_SAMPLEPERIOD };
+
 char inputParameter_char;
 struct inputValue_struct_type
 {
@@ -72,16 +94,8 @@ enum USART_InputSpecifier_type
 	PARAMETER = 1,	// the USART input describes the parameter
 	VALUE = 2		// the USART input describes the value to which the parameter will be set
 } inputSpecifier;
-struct PIDparams_type
-{
-	double P;
-	double I;
-	double D;
-	double S; // setpoint
-	double W; // wind up limit
-	int8_t E; // sign of error
-} PIDparams;
-const char* helpMessage = "Type 'P' OR 'I' OR 'D' for writing PID gain parameters OR 'A' for reading analog input OR 'S' for writing setpoint OR 'W' for writing wind up limit OR 'T' for writing time constant of low pass filter for derivative part\n";
+
+const char* helpMessage = "Type 'P', 'I', 'D' for writing PID gain parameters, 'A' for reading analog input, 'S' for writing setpoint, 'W' for writing wind up limit, 'T' for writing time constant of low pass filter of derivative\n";
 
 
 //_____________
@@ -201,25 +215,28 @@ char *convertDoubleToString(double input)
 }
 
 
-void usart2_writePIDParameters(struct PIDparams_type PID)
+void usart2_writePIDParameters(PIDController PID)
 {
-	usart2_writeString("P: ");
-	usart2_writeString(convertDoubleToString(PID.P));
-	usart2_writeString("  I: ");
-	usart2_writeString(convertDoubleToString(PID.I));
-	usart2_writeString("  D: ");
-	usart2_writeString(convertDoubleToString(PID.D));
-	usart2_writeString("  S: ");
-	usart2_writeString(convertDoubleToString(PID.S));
-	usart2_writeString("  W: ");
-	usart2_writeString(convertDoubleToString(PID.W));
-	if (PID.E==1)
+	usart2_writeString("  Setpoint: ");
+	usart2_writeString(convertDoubleToString(PID.setpoint));
+	usart2_writeString("  Kp: ");
+	usart2_writeString(convertDoubleToString(PID.Kp));
+	usart2_writeString("  Ki: ");
+	usart2_writeString(convertDoubleToString(PID.Ki));
+	usart2_writeString("  Kd: ");
+	usart2_writeString(convertDoubleToString(PID.Kd));
+	usart2_writeString("  Integrator windup limit: ");
+	usart2_writeString(convertDoubleToString(PID.limMaxIntegrator));
+	usart2_writeString("  Low pass time constant: ");
+	usart2_writeString(convertDoubleToString(PID.tau));
+
+	if (PID.signOfPID==1)
 	{
-		usart2_writeString("  Error = setpoint - actual value\n");
+		usart2_writeString("  Error = setpoint - measurement\n");
 	}
-	else if (PID.E==1)
+	else
 	{
-		usart2_writeString("  Error = actual value - setpoint\n");
+		usart2_writeString("  Error = measurement - setpoint\n");
 	}
 }
 
@@ -236,23 +253,21 @@ void USART2_IRQHandler(void)
 		{
 			case 'P':
 			case 'p':
-				usart2_writeString("Please type P value of PID: ");
+				usart2_writeString("Please type Kp value of PID: ");
 				inputSpecifier = VALUE;
 				helpMessageWasSent = FALSE;
-				
-				//strtod();
 				break;
 			
 			case 'I':
 			case 'i':
-				usart2_writeString("Please type I value of PID: ");
+				usart2_writeString("Please type Ki value of PID: ");
 				inputSpecifier = VALUE;
 				helpMessageWasSent = FALSE;
 				break;
 
 			case 'D':
 			case 'd':
-				usart2_writeString("Please type D value of PID: ");
+				usart2_writeString("Please type Kd value of PID: ");
 				inputSpecifier = VALUE;
 				helpMessageWasSent = FALSE;
 				break;
@@ -271,22 +286,29 @@ void USART2_IRQHandler(void)
 				helpMessageWasSent = FALSE;
 				break;
 
+			case 'T':
+			case 't':
+				usart2_writeString("Please type time constant of lowpass for D: ");
+				inputSpecifier = VALUE;
+				helpMessageWasSent = FALSE;
+				break;
+
 			case 'A':
 			case 'a':
-				// TODO: PRINT ANALOG INPUT			
+				usart2_writeString(convertDoubleToString(ADC1_read()));
 				helpMessageWasSent = FALSE;
 				break;
 
 			case '-':
-				PIDparams.E = -PIDparams.E;
-				usart2_writeString("Sign of Error was inverted! ");
+				pid.signOfPID = -pid.signOfPID;
+				usart2_writeString("Sign of PID was inverted! ");
 				helpMessageWasSent = FALSE;
 
 			default:
 				if (helpMessageWasSent == FALSE)
 				{
 					usart2_writeString(helpMessage);
-					usart2_writePIDParameters(PIDparams);
+					//usart2_writePIDParameters(PIDparams);
 				}				
 				helpMessageWasSent = TRUE;
 		}
@@ -312,41 +334,46 @@ void USART2_IRQHandler(void)
 			{
 				inputChar_part[i] = inputValue_struct.inputChar[i];
 			}
-			char* cptr;
+			char* cptr = 0;
 			double finalValue = strtod(inputChar_part, cptr);
 			switch (inputParameter_char)
 			{
 				case 'P':
 				case 'p':
-					PIDparams.P = finalValue;
-					printParameterWasSetMessage('P');
+					pid.Kp = finalValue;
+					printParameterWasSetMessage('Kp');
 					break;
 
 				case 'I':
 				case 'i':
-					PIDparams.I = finalValue;
-					printParameterWasSetMessage('I');
+					pid.Ki = finalValue;
+					printParameterWasSetMessage('Ki');
 					break;
 
 				case 'D':
 				case 'd':
-					PIDparams.D = finalValue;
-					printParameterWasSetMessage('D');
+					pid.Kd = finalValue;
+					printParameterWasSetMessage('Kd');
 					break;
 
 				case 'S':
 				case 's':
-					PIDparams.S = finalValue;
-					printParameterWasSetMessage('S');
+					pid.setpoint = finalValue;
+					printParameterWasSetMessage('Setpoint');
 					break;
 
 				case 'W':
 				case 'w':
-					PIDparams.W = finalValue;
-					printParameterWasSetMessage('W');
+					pid.limMaxIntegrator = finalValue;
+					printParameterWasSetMessage('Wind up limit');
 					break;
 
-
+				case 'T':
+				case 't':
+					pid.tau = finalValue;
+					printParameterWasSetMessage('tau');
+					break;
+	
 				default:
 					usart2_writeString("Oopsie Daisey! Something went wrong! :(\n");
 			
@@ -354,7 +381,7 @@ void USART2_IRQHandler(void)
 			}
 			resetInputValueStruct(&inputValue_struct, MAX_AMOUNT_INPUT_DIGITS);
 			inputSpecifier = PARAMETER;	
-			usart2_writePIDParameters(PIDparams);
+			//usart2_writePIDParameters(PIDparams);
 
 		}
 
@@ -364,7 +391,7 @@ void USART2_IRQHandler(void)
 			resetInputValueStruct(&inputValue_struct, MAX_AMOUNT_INPUT_DIGITS);
 			inputSpecifier = PARAMETER;
 			usart2_writeString(" Input cancelled! ");
-			usart2_writePIDParameters(PIDparams);
+			//usart2_writePIDParameters(PIDparams);
 		}
 	}
 	// ToDo: reset pending bit
@@ -393,34 +420,17 @@ int main()
 {
 	inputSpecifier = PARAMETER;
 	resetInputValueStruct(&inputValue_struct, MAX_AMOUNT_INPUT_DIGITS);
+	
+
 
 	usart2_init();	
-	usart2_writeString(helpMessage);
+	ADC1_init();
+	PIDController_Init(&pid);
 
+	usart2_writeString(helpMessage);
+	
 	while (1)
 	{
-		// new PID implementation:
-
-
-		/* old PID implementation
-		double error[2];
-		double actualValue = ADC1_read(); // read new actual value
-		error[1] = error[0]; // shift old error
-		error[0] = (PIDparams.S - actualValue) * PIDparams.E; // calculate new error
-		double pOutput = PIDparams.P * error[0];
-		double dOutput = PIDparams.D * (error[0] - error[1]) / ADC_SAMPLEPERIOD;
-		// calculate integer part of output
-		static double iOutput; // static to keep value between loop increments
-		if (iOutput < PIDparams.W)
-		{
-			iOutput = PIDparams.I * error[0] * ADC_SAMPLEPERIOD;
-		}
-		else
-		{
-			iOutput = PIDparams.W; // anti wind up
-		}
-		double output = pOutput + iOutput + dOutput;
-		// ToDo: DAC
-		*/
+		PIDController_Update(&pid, ADC1_read());
 	}
 }

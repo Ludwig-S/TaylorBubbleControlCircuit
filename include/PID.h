@@ -1,7 +1,14 @@
+#include<stdint.h>
 #ifndef PID_CONTROLLER_H
 #define PID_CONTROLLER_H
 
 typedef struct {
+
+	// Set point
+	float setpoint;
+
+	// Sign of error
+	int8_t signOfPID;
 
 	/* Controller gains */
 	float Kp;
@@ -12,12 +19,12 @@ typedef struct {
 	float tau;
 
 	/* Output limits */
-	float limMin;
-	float limMax;
+	float limMinOut;
+	float limMaxOut;
 	
 	/* Integrator limits */
-	float limMinInt;
-	float limMaxInt;
+	float limMinIntegrator;
+	float limMaxIntegrator;
 
 	/* Sample time (in seconds) */
 	float T;
@@ -34,6 +41,6 @@ typedef struct {
 } PIDController;
 
 void  PIDController_Init(PIDController *pid);
-float PIDController_Update(PIDController *pid, float setpoint, float measurement);
+float PIDController_Update(PIDController *pid, float measurement);
 
 #endif

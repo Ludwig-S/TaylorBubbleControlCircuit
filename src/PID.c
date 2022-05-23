@@ -3,6 +3,7 @@
 void PIDController_Init(PIDController *pid) {
 
 	/* Clear controller variables */
+	pid->signOfPID = 1;
 	pid->integrator = 0.0f;
 	pid->prevError  = 0.0f;
 
@@ -13,12 +14,12 @@ void PIDController_Init(PIDController *pid) {
 
 }
 
-float PIDController_Update(PIDController *pid, float setpoint, float measurement) {
+float PIDController_Update(PIDController *pid, float measurement) {
 
 	/*
 	* Error signal
 	*/
-    float error = setpoint - measurement;
+    float error = (pid->setpoint - measurement) * pid->signOfPID;
 
 
 	/*
@@ -33,13 +34,13 @@ float PIDController_Update(PIDController *pid, float setpoint, float measurement
     pid->integrator = pid->integrator + 0.5f * pid->Ki * pid->T * (error + pid->prevError);
 
 	/* Anti-wind-up via integrator clamping */
-    if (pid->integrator > pid->limMaxInt) {
+    if (pid->integrator > pid->limMaxIntegrator) {
 
-        pid->integrator = pid->limMaxInt;
+        pid->integrator = pid->limMaxIntegrator;
 
-    } else if (pid->integrator < pid->limMinInt) {
+    } else if (pid->integrator < pid->limMinIntegrator) {
 
-        pid->integrator = pid->limMinInt;
+        pid->integrator = pid->limMinIntegrator;
 
     }
 
@@ -58,13 +59,13 @@ float PIDController_Update(PIDController *pid, float setpoint, float measurement
 	*/
     pid->out = proportional + pid->integrator + pid->differentiator;
 
-    if (pid->out > pid->limMax) {
+    if (pid->out > pid->limMaxOut) {
 
-        pid->out = pid->limMax;
+        pid->out = pid->limMaxOut;
 
-    } else if (pid->out < pid->limMin) {
+    } else if (pid->out < pid->limMinOut) {
 
-        pid->out = pid->limMin;
+        pid->out = pid->limMinOut;
 
     }
 
