@@ -4,10 +4,8 @@
 
 typedef struct {
 
-	// Set point
+	// PID parameters
 	float setpoint;
-
-	// Sign of error
 	int8_t signOfPID;
 
 	/* Controller gains */
