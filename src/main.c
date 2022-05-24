@@ -36,7 +36,7 @@ ______________________________________________
 //___________
 // MACROS:
 #define MAX_AMOUNT_INPUT_DIGITS 10
-#define ADC_REFVOLT 3.3
+#define ADC_REFVOLT 3.3f
 #define ADC_SAMPLEPERIOD (15/90e6) // ADC stabilisation time (3 cycles) + conversion time (12 cycles) = 15 cycles
 									// ADC1 gets clock from APB2 (90MHz)
 /* Initial controller parameters */
@@ -49,7 +49,7 @@ ______________________________________________
 #define PID_TAU 0.02f
 
 #define PID_OUT_LIM_MIN  0
-#define PID_OUT_LIM_MAX  100.0f
+#define PID_OUT_LIM_MAX  5.0f
 
 #define PID_INT_LIM_MIN  0
 #define PID_INT_LIM_MAX  5.0f
@@ -93,6 +93,23 @@ enum USART_InputSpecifier_type
 
 const char* helpMessage = "Type 'P', 'I', 'D' for writing PID gain parameters, 'A' for reading analog input, 'S' for writing setpoint, 'W' for writing wind up limit, 'T' for writing time constant of low pass filter of derivative\n";
 
+//_____________
+// FUNCTION PROTOTYPES:
+void PWM_init(uint32_t dutyCycle);
+void PWM_setDutyCycle(uint32_t dutyCycle);
+void usart2_init(void);
+void usart2_writeChar(char msg_char);
+void usart2_writeString(char *msg_string);
+char usart2_readChar(void);
+void resetInputValueStruct(struct inputValue_struct_type* iValStr_pointer, size_t stringSize);
+void printParameterWasSetMessage(char parameterChar);
+char *convertDoubleToString(double input);
+void usart2_writePIDParameters(PIDController PID);
+void USART2_IRQHandler(void);
+void ADC1_init();
+float ADC1_read();
+void DAC1_init();
+void DAC1_writeOutput(float percent);
 
 //_____________
 // FUNCTIONS:
@@ -159,7 +176,8 @@ void usart2_writeString(char *msg_string)
 }
 
 
-char usart2_readChar(void){
+char usart2_readChar(void)
+{
 	if (USART2->SR & USART_SR_RXNE){ // if data is ready to be read
 		return USART2->DR; // read received char and return it
 	}
@@ -304,7 +322,7 @@ void USART2_IRQHandler(void)
 				if (helpMessageWasSent == FALSE)
 				{
 					usart2_writeString(helpMessage);
-					//usart2_writePIDParameters(PIDparams);
+					usart2_writePIDParameters(pid);
 				}				
 				helpMessageWasSent = TRUE;
 		}
@@ -405,23 +423,25 @@ void ADC1_init()
 	// ADC1->CR1 |= ADC_CR1_SCAN; // select scan mode
 }
 
-uint32_t ADC1_read()
+float ADC1_read()
 {
 	ADC1->CR2 |= ADC_CR2_SWSTART; // start conversion
-	while (!(ADC1->SR & ADC_SR_EOC)) // wait until end of conversion is reached	
-	return ADC1->DR;// read data register		
+	while (!(ADC1->SR & ADC_SR_EOC)); // wait until end of conversion is reached	
+	return ADC1->DR * ADC_REFVOLT;// read data register
 }
 
 void DAC1_init()
 {
 	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN; // clock to port A
 	MODIFY_REG(GPIOA->MODER, GPIO_MODER_MODE4, GPIO_MODER_MODE4_0 || GPIO_MODER_MODE4_1); // set PA4 to analog mode (MODER1 = 0b11)
-	DAC->CR |= DAC_CR_EN1; // enable DAC1
+	RCC->APB1ENR |= RCC_APB1ENR_DACEN; // clock to DAC
+	DAC->CR |= DAC_CR_EN1; // enable DAC
 	// DAC in normal mode with output buffer by default
 }
 
 void DAC1_writeOutput(float percent)
 {
+	percent = percent / 100.0f;
 	uint32_t regData = (int) percent * 0xFFF; // convert input signal to DAC register data
 	DAC1->DHR12R1 = regData; // write to 12 bit right alligned DAC output data
 }
@@ -433,6 +453,7 @@ int main()
 
 	usart2_init();	
 	ADC1_init();
+	DAC1_init();
 	PIDController_Init(&pid);
 
 	usart2_writeString(helpMessage);
@@ -440,7 +461,8 @@ int main()
 
 	while (1)
 	{
-		outputSignal_float = PIDController_Update(&pid, ADC1_read());
-
+		uint32_t measurement = ADC1_read();
+		outputSignal_float = PIDController_Update(&pid, measurement);
+		DAC1_writeOutput(outputSignal_float / pid.limMaxOut);
 	}
 }
