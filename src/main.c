@@ -41,7 +41,7 @@ ______________________________________________
 									// ADC1 gets clock from APB2 (90MHz)
 /* Initial controller parameters */
 #define PID_SIGN 1
-#define PID_SETPOINT 5.0f
+#define PID_SETPOINT 3.0f
 #define PID_KP  2.0f
 #define PID_KI  0.5f
 #define PID_KD  0.25f
@@ -146,7 +146,7 @@ void usart2_init(void)
 	// USART2_RX uses port A2 and USART2_TX uses port A3 if each are set to alternate function 7 (p.59 datasheet)
 	RCC->APB1ENR |= RCC_APB1ENR_USART2EN;	// enable clock to USART2
 	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN; // enable clock to Port A
-	GPIOA->MODER |= (GPIO_MODER_MODE2_1|GPIO_MODER_MODE3_1); // set PA2 and PA3 to alternate function
+	GPIOA->MODER |= (GPIO_MODER_MODE2_1|GPIO_MODER_MODE3_1); // set PA2 and PA3 to alternate function 0b10
 	GPIOA->AFR[0] |= 
 		(GPIO_AFRL_AFRL2_2 | GPIO_AFRL_AFRL2_1 | GPIO_AFRL_AFRL2_0 | GPIO_AFRL_AFRL3_2 
 		| GPIO_AFRL_AFRL3_1 | GPIO_AFRL_AFRL3_0); // set PA2 to AF7 (USART2_TX) and PA3 to AF7 (USART2_RX)
@@ -414,7 +414,7 @@ void USART2_IRQHandler(void)
 void ADC1_init()
 {
 	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN; 	// clock to Port A
-	MODIFY_REG(GPIOA->MODER, GPIO_MODER_MODE1, GPIO_MODER_MODE1_0 || GPIO_MODER_MODE1_1); // set PA1 to analog mode (MODER1 = 0b11)
+	MODIFY_REG(GPIOA->MODER, GPIO_MODER_MODE1, GPIO_MODER_MODE1_0 | GPIO_MODER_MODE1_1); // set PA1 to analog mode (MODER1 = 0b11)
 	// GPIOA->MODER |= (GPIO_MODER_MODE1_0 || GPIO_MODER_MODE1_1);
 	RCC->APB2ENR |= RCC_APB2ENR_ADC1EN; // enable clock to ADC1
 	MODIFY_REG(ADC1->SQR3, ADC_SQR3_SQ1, ADC_SQR3_SQ1_0); // first ADC channel to scan is Channel 1 (PA1)
@@ -433,7 +433,7 @@ float ADC1_read()
 void DAC1_init()
 {
 	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN; // clock to port A
-	MODIFY_REG(GPIOA->MODER, GPIO_MODER_MODE4, GPIO_MODER_MODE4_0 || GPIO_MODER_MODE4_1); // set PA4 to analog mode (MODER1 = 0b11)
+	MODIFY_REG(GPIOA->MODER, GPIO_MODER_MODE4, GPIO_MODER_MODE4_0 | GPIO_MODER_MODE4_1); // set PA4 to analog mode (MODER1 = 0b11)
 	RCC->APB1ENR |= RCC_APB1ENR_DACEN; // clock to DAC
 	DAC->CR |= DAC_CR_EN1; // enable DAC
 	// DAC in normal mode with output buffer by default
