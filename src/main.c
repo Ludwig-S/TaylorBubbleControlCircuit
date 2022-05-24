@@ -8,9 +8,7 @@
 
 /*
 ToDo:
-- update new PID implementation
-- Test analog input and PID
-- PID output to DAC; alternatively PID to PWM: change PWM pin, check PWM frequency for servo, higher PWM duty cycle resolution
+- Test analog input, output and PID
 */
 
 
@@ -29,6 +27,8 @@ GPIO pin overview:
 PA1		Analog Input
 PA2		USART2_RX
 PA3		USART2_TX
+PA4		DAC_OUT1
+
 PA15	PWM output => AF1 (TIM2_CH1/ TIM2_ETR)
 
 Important:
@@ -416,21 +416,35 @@ uint32_t ADC1_read()
 	return ADC1->DR;// read data register		
 }
 
+void DAC1_init()
+{
+	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN; // clock to port A
+	MODIFY_REG(GPIOA->MODER, GPIO_MODER_MODE4, GPIO_MODER_MODE4_0 || GPIO_MODER_MODE4_1); // set PA4 to analog mode (MODER1 = 0b11)
+	DAC->CR |= DAC_CR_EN1; // enable DAC1
+	// DAC in normal mode with output buffer by default
+}
+
+void DAC1_writeOutput(float percent)
+{
+	uint32_t regData = (int) percent * 0xFFF; // convert input signal to DAC register data
+	DAC1->DHR12R1 = regData; // write to 12 bit right alligned DAC output data
+}
+
 int main()
 {
 	inputSpecifier = PARAMETER;
 	resetInputValueStruct(&inputValue_struct, MAX_AMOUNT_INPUT_DIGITS);
-	
-
 
 	usart2_init();	
 	ADC1_init();
 	PIDController_Init(&pid);
 
 	usart2_writeString(helpMessage);
-	
+	float outputSignal_float;
+
 	while (1)
 	{
-		PIDController_Update(&pid, ADC1_read());
+		outputSignal_float = PIDController_Update(&pid, ADC1_read());
+
 	}
 }

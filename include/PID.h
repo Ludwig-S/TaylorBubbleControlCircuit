@@ -6,7 +6,7 @@ typedef struct {
 
 	// PID parameters
 	float setpoint;
-	int8_t signOfPID;
+	uint8_t signOfPID;
 
 	/* Controller gains */
 	float Kp;
