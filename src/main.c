@@ -424,9 +424,9 @@ void ADC1_init()
 
 float ADC1_read()
 {
-	ADC1->CR2 |= ADC_CR2_SWSTART; // start conversion
+ 	ADC1->CR2 |= ADC_CR2_SWSTART; // start conversion
 	while (!(ADC1->SR & ADC_SR_EOC)); // wait until end of conversion is reached	
-	return ADC1->DR * ADC_REFVOLT;// read data register
+	return (ADC1->DR / 0xFFF) * ADC_REFVOLT;// read data register
 }
 
 void DAC1_init()
@@ -460,7 +460,7 @@ int main()
 
 	while (1)
 	{
-		uint32_t measurement = ADC1_read();
+		float measurement = ADC1_read();
 		outputSignal_float = PIDController_Update(&pid, measurement);
 		DAC1_writeOutput(outputSignal_float / pid.limMaxOut);
 	}
