@@ -8,7 +8,7 @@
 
 /*
 ToDo:
-- Test analog input and output
+- Test analog output
 
 _______________________________________________
 USART settings: 
@@ -49,7 +49,7 @@ ______________________________________________
 #define PID_TAU 0.02f
 
 #define PID_OUT_LIM_MIN  0
-#define PID_OUT_LIM_MAX  5.0f
+#define PID_OUT_LIM_MAX  3.3f
 
 #define PID_INT_LIM_MIN  0
 #define PID_INT_LIM_MAX  5.0f
@@ -310,6 +310,7 @@ void USART2_IRQHandler(void)
 			case 'A':
 			case 'a':
 				usart2_writeString(convertDoubleToString(ADC1_read()));
+				usart2_writeString("\n");
 				helpMessageWasSent = FALSE;
 				break;
 
@@ -417,16 +418,14 @@ void ADC1_init()
 	MODIFY_REG(GPIOA->MODER, GPIO_MODER_MODE1, GPIO_MODER_MODE1_0 | GPIO_MODER_MODE1_1); // set PA1 to analog mode (MODER1 = 0b11)
 	RCC->APB2ENR |= RCC_APB2ENR_ADC1EN; // enable clock to ADC1
 	MODIFY_REG(ADC1->SQR3, ADC_SQR3_SQ1, ADC_SQR3_SQ1_0); // first ADC channel to scan is Channel 1 (PA1)
-	// ADC1->CR2 |= ADC_CR2_CONT; // enable continuous mode
 	ADC1->CR2 |= ADC_CR2_ADON; // enable ADC1
-	// ADC1->CR1 |= ADC_CR1_SCAN; // select scan mode
 }
 
 float ADC1_read()
 {
  	ADC1->CR2 |= ADC_CR2_SWSTART; // start conversion
 	while (!(ADC1->SR & ADC_SR_EOC)); // wait until end of conversion is reached	
-	return (ADC1->DR / 0xFFF) * ADC_REFVOLT;// read data register
+	return (ADC1->DR / 4095.0f) * ADC_REFVOLT;// read data register
 }
 
 void DAC1_init()
@@ -440,7 +439,6 @@ void DAC1_init()
 
 void DAC1_writeOutput(float percent)
 {
-	percent = percent / 100.0f;
 	uint32_t regData = (int) percent * 0xFFF; // convert input signal to DAC register data
 	DAC1->DHR12R1 = regData; // write to 12 bit right alligned DAC output data
 }
