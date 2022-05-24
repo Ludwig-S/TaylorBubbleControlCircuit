@@ -8,12 +8,8 @@
 
 /*
 ToDo:
-- Test analog input, output and PID
-*/
+- Test analog input and output
 
-
-
-/*
 _______________________________________________
 USART settings: 
 Baudrate: 9600 BdpS
