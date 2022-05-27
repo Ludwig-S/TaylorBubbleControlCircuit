@@ -29,11 +29,11 @@ PA15	PWM output => AF1 (TIM2_CH1/ TIM2_ETR)
 
 Important:
 Do not overwrite PA13 and PA14, because the uC uses these pins for flashing!
-______________________________________________
+________________________________________________________________
 */
 
 
-//___________
+//______________________________________________________________
 // MACROS:
 #define MAX_AMOUNT_INPUT_DIGITS 10
 #define ADC_REFVOLT 3.3f
@@ -64,9 +64,15 @@ ______________________________________________
 #define MODIFY_REG(REG, CLEARMASK, SETMASK)  WRITE_REG((REG), (((READ_REG(REG)) & (~(CLEARMASK))) | (SETMASK)))
 #define POSITION_VAL(VAL)     (__CLZ(__RBIT(VAL)))
 
-//___________________
+//_________________________________________________________________________
 // GLOBAL VARIABLES:
-// PID
+enum boolean
+{
+	FALSE,
+	TRUE
+} helpMessageWasSent = FALSE;
+
+// PID variables:
 typedef struct {
 
 	// PID parameters
@@ -102,13 +108,13 @@ typedef struct {
 	float out;
 
 } PIDController;
-
 PIDController pid = {PID_SETPOINT, PID_SIGN, PID_KP, PID_KI, PID_KD,
 						PID_TAU,
 						PID_OUT_LIM_MIN, PID_OUT_LIM_MAX,
 			PID_INT_LIM_MIN, PID_INT_LIM_MAX,
 						ADC_SAMPLEPERIOD };
 
+// COMMUNICATION variables:
 char inputParameter_char;
 struct inputValue_struct_type
 {
@@ -116,24 +122,15 @@ struct inputValue_struct_type
 	char inputChar[MAX_AMOUNT_INPUT_DIGITS];
 } inputValue_struct;
 char valueOfParameter_string[MAX_AMOUNT_INPUT_DIGITS];
-
-// communication:
 // this varialbe specifies the interpreted meaning of the USART input:
 enum USART_InputSpecifier_type
 {
 	PARAMETER = 1,	// the USART input describes the parameter
 	VALUE = 2		// the USART input describes the value to which the parameter will be set
 } inputSpecifier;
-
 const char* helpMessage = "Type 'P', 'I', 'D' for writing PID gain parameters, 'A' for reading analog input, 'S' for writing setpoint, 'W' for writing wind up limit, 'T' for writing time constant of low pass filter of derivative\n";
 
-enum boolean
-{
-	FALSE,
-	TRUE
-} helpMessageWasSent = FALSE;
-
-//_____________
+//______________________________________________________________________________________________
 // FUNCTION PROTOTYPES:
 void PWM_init(uint32_t dutyCycle);
 void PWM_setDutyCycle(uint32_t dutyCycle);
@@ -153,8 +150,117 @@ void DAC1_writeOutput(float fraction);
 void  PIDController_Init(PIDController *pid);
 float PIDController_Update(PIDController *pid, float measurement);
 
-//_____________
+//____________________________________________________________________
 // FUNCTIONS:
+void ADC1_init()
+{
+	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN; 	// clock to Port A
+	MODIFY_REG(GPIOA->MODER, GPIO_MODER_MODE1, GPIO_MODER_MODE1_0 | GPIO_MODER_MODE1_1); // set PA1 to analog mode (MODER1 = 0b11)
+	RCC->APB2ENR |= RCC_APB2ENR_ADC1EN; // enable clock to ADC1
+	MODIFY_REG(ADC1->SQR3, ADC_SQR3_SQ1, ADC_SQR3_SQ1_0); // first ADC channel to scan is Channel 1 (PA1)
+	ADC1->CR2 |= ADC_CR2_ADON; // enable ADC1
+}
+
+float ADC1_read()
+{
+ 	ADC1->CR2 |= ADC_CR2_SWSTART; // start conversion
+	while (!(ADC1->SR & ADC_SR_EOC)); // wait until end of conversion is reached	
+	return (ADC1->DR / 4095.0f) * ADC_REFVOLT;// read data register
+}
+
+void DAC1_init()
+{
+	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN; // clock to port A
+	MODIFY_REG(GPIOA->MODER, GPIO_MODER_MODE4, GPIO_MODER_MODE4_0 | GPIO_MODER_MODE4_1); // set PA4 to analog mode (MODER1 = 0b11)
+	RCC->APB1ENR |= RCC_APB1ENR_DACEN; // clock to DAC
+	DAC->CR |= DAC_CR_EN1; // enable DAC
+	// DAC in normal mode with output buffer by default
+}
+
+void DAC1_writeOutput(float fraction)
+{
+	uint32_t regData = fraction * 0xFFF; // convert input signal to DAC register data
+	DAC->DHR12R1 = regData; // write to 12 bit right alligned DAC output data
+}
+
+void PIDController_Init(PIDController *pid) {
+
+	/* Clear controller variables */
+	pid->signOfPID = 1;
+	pid->integrator = 0.0f;
+	pid->prevError  = 0.0f;
+
+	pid->differentiator  = 0.0f;
+	pid->prevMeasurement = 0.0f;
+
+	pid->out = 0.0f;
+
+}
+
+float PIDController_Update(PIDController *pid, float measurement) {
+
+	/*
+	* Error signal
+	*/
+    float error = (pid->setpoint - measurement) * pid->signOfPID;
+
+
+	/*
+	* Proportional
+	*/
+    float proportional = pid->Kp * error;
+
+
+	/*
+	* Integral
+	*/
+    pid->integrator = pid->integrator + 0.5f * pid->Ki * pid->T * (error + pid->prevError);
+
+	/* Anti-wind-up via integrator clamping */
+    if (pid->integrator > pid->limMaxIntegrator) {
+
+        pid->integrator = pid->limMaxIntegrator;
+
+    } else if (pid->integrator < pid->limMinIntegrator) {
+
+        pid->integrator = pid->limMinIntegrator;
+
+    }
+
+
+	/*
+	* Derivative (band-limited differentiator)
+	*/
+		
+    pid->differentiator = -(2.0f * pid->Kd * (measurement - pid->prevMeasurement)	/* Note: derivative on measurement, therefore minus sign in front of equation! */
+                        + (2.0f * pid->tau - pid->T) * pid->differentiator)
+                        / (2.0f * pid->tau + pid->T);
+
+
+	/*
+	* Compute output and apply limits
+	*/
+    pid->out = proportional + pid->integrator + pid->differentiator;
+
+    if (pid->out > pid->limMaxOut) {
+
+        pid->out = pid->limMaxOut;
+
+    } else if (pid->out < pid->limMinOut) {
+
+        pid->out = pid->limMinOut;
+
+    }
+
+	/* Store error and measurement for later use */
+    pid->prevError       = error;
+    pid->prevMeasurement = measurement;
+
+	/* Return controller output */
+    return pid->out;
+
+}
+
 
 void PWM_init(uint32_t dutyCycle)
 {
@@ -296,8 +402,8 @@ void usart2_writePIDParameters(PIDController PID)
 	}
 }
 
-
-// interrupt request handler:
+//___________________________________________________________________________________
+// interrupt request handlers:
 void USART2_IRQHandler(void)
 {
 	char c = usart2_readChar();
@@ -451,116 +557,6 @@ void USART2_IRQHandler(void)
 			//usart2_writePIDParameters(PIDparams);
 		}
 	}
-	// ToDo: reset pending bit
-}
-
-void ADC1_init()
-{
-	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN; 	// clock to Port A
-	MODIFY_REG(GPIOA->MODER, GPIO_MODER_MODE1, GPIO_MODER_MODE1_0 | GPIO_MODER_MODE1_1); // set PA1 to analog mode (MODER1 = 0b11)
-	RCC->APB2ENR |= RCC_APB2ENR_ADC1EN; // enable clock to ADC1
-	MODIFY_REG(ADC1->SQR3, ADC_SQR3_SQ1, ADC_SQR3_SQ1_0); // first ADC channel to scan is Channel 1 (PA1)
-	ADC1->CR2 |= ADC_CR2_ADON; // enable ADC1
-}
-
-float ADC1_read()
-{
- 	ADC1->CR2 |= ADC_CR2_SWSTART; // start conversion
-	while (!(ADC1->SR & ADC_SR_EOC)); // wait until end of conversion is reached	
-	return (ADC1->DR / 4095.0f) * ADC_REFVOLT;// read data register
-}
-
-void DAC1_init()
-{
-	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN; // clock to port A
-	MODIFY_REG(GPIOA->MODER, GPIO_MODER_MODE4, GPIO_MODER_MODE4_0 | GPIO_MODER_MODE4_1); // set PA4 to analog mode (MODER1 = 0b11)
-	RCC->APB1ENR |= RCC_APB1ENR_DACEN; // clock to DAC
-	DAC->CR |= DAC_CR_EN1; // enable DAC
-	// DAC in normal mode with output buffer by default
-}
-
-void DAC1_writeOutput(float fraction)
-{
-	uint32_t regData = fraction * 0xFFF; // convert input signal to DAC register data
-	DAC->DHR12R1 = regData; // write to 12 bit right alligned DAC output data
-}
-
-void PIDController_Init(PIDController *pid) {
-
-	/* Clear controller variables */
-	pid->signOfPID = 1;
-	pid->integrator = 0.0f;
-	pid->prevError  = 0.0f;
-
-	pid->differentiator  = 0.0f;
-	pid->prevMeasurement = 0.0f;
-
-	pid->out = 0.0f;
-
-}
-
-float PIDController_Update(PIDController *pid, float measurement) {
-
-	/*
-	* Error signal
-	*/
-    float error = (pid->setpoint - measurement) * pid->signOfPID;
-
-
-	/*
-	* Proportional
-	*/
-    float proportional = pid->Kp * error;
-
-
-	/*
-	* Integral
-	*/
-    pid->integrator = pid->integrator + 0.5f * pid->Ki * pid->T * (error + pid->prevError);
-
-	/* Anti-wind-up via integrator clamping */
-    if (pid->integrator > pid->limMaxIntegrator) {
-
-        pid->integrator = pid->limMaxIntegrator;
-
-    } else if (pid->integrator < pid->limMinIntegrator) {
-
-        pid->integrator = pid->limMinIntegrator;
-
-    }
-
-
-	/*
-	* Derivative (band-limited differentiator)
-	*/
-		
-    pid->differentiator = -(2.0f * pid->Kd * (measurement - pid->prevMeasurement)	/* Note: derivative on measurement, therefore minus sign in front of equation! */
-                        + (2.0f * pid->tau - pid->T) * pid->differentiator)
-                        / (2.0f * pid->tau + pid->T);
-
-
-	/*
-	* Compute output and apply limits
-	*/
-    pid->out = proportional + pid->integrator + pid->differentiator;
-
-    if (pid->out > pid->limMaxOut) {
-
-        pid->out = pid->limMaxOut;
-
-    } else if (pid->out < pid->limMinOut) {
-
-        pid->out = pid->limMinOut;
-
-    }
-
-	/* Store error and measurement for later use */
-    pid->prevError       = error;
-    pid->prevMeasurement = measurement;
-
-	/* Return controller output */
-    return pid->out;
-
 }
 
 
