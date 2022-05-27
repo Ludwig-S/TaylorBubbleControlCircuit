@@ -7,7 +7,8 @@
 
 /*
 ToDo:
-- Test analog output
+- convert data input of tau to low pass frequency
+- test PID (in process)
 
 _______________________________________________
 USART settings: 
@@ -45,7 +46,7 @@ ______________________________________________
 #define PID_KI  0.5f
 #define PID_KD  0.25f
 
-#define PID_TAU 0.02f
+#define PID_TAU 0.02f // Tau = RC, f_lowpass = 1/(2*pi*Tau)
 
 #define PID_OUT_LIM_MIN  0
 #define PID_OUT_LIM_MAX  3.3f
