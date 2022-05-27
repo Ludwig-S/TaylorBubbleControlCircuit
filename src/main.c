@@ -1,5 +1,4 @@
 #include "stm32f4xx.h"                  // Device header
-#include "PID.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,7 +40,7 @@ ______________________________________________
 									// ADC1 gets clock from APB2 (90MHz)
 /* Initial controller parameters */
 #define PID_SIGN 1
-#define PID_SETPOINT 3.0f
+#define PID_SETPOINT 1.5f
 #define PID_KP  2.0f
 #define PID_KI  0.5f
 #define PID_KD  0.25f
@@ -66,6 +65,43 @@ ______________________________________________
 
 //___________________
 // GLOBAL VARIABLES:
+// PID
+typedef struct {
+
+	// PID parameters
+	float setpoint;
+	uint8_t signOfPID;
+
+	/* Controller gains */
+	float Kp;
+	float Ki;
+	float Kd;
+
+	/* Derivative low-pass filter time constant */
+	float tau;
+
+	/* Output limits */
+	float limMinOut;
+	float limMaxOut;
+	
+	/* Integrator limits */
+	float limMinIntegrator;
+	float limMaxIntegrator;
+
+	/* Sample time (in seconds) */
+	float T;
+
+	/* Controller "memory" */
+	float integrator;
+	float prevError;			/* Required for integrator */
+	float differentiator;
+	float prevMeasurement;		/* Required for differentiator */
+
+	/* Controller output */
+	float out;
+
+} PIDController;
+
 PIDController pid = {PID_SETPOINT, PID_SIGN, PID_KP, PID_KI, PID_KD,
 						PID_TAU,
 						PID_OUT_LIM_MIN, PID_OUT_LIM_MAX,
@@ -79,11 +115,8 @@ struct inputValue_struct_type
 	char inputChar[MAX_AMOUNT_INPUT_DIGITS];
 } inputValue_struct;
 char valueOfParameter_string[MAX_AMOUNT_INPUT_DIGITS];
-enum boolean
-{
-	FALSE,
-	TRUE
-} helpMessageWasSent = FALSE;
+
+// communication:
 // this varialbe specifies the interpreted meaning of the USART input:
 enum USART_InputSpecifier_type
 {
@@ -92,6 +125,12 @@ enum USART_InputSpecifier_type
 } inputSpecifier;
 
 const char* helpMessage = "Type 'P', 'I', 'D' for writing PID gain parameters, 'A' for reading analog input, 'S' for writing setpoint, 'W' for writing wind up limit, 'T' for writing time constant of low pass filter of derivative\n";
+
+enum boolean
+{
+	FALSE,
+	TRUE
+} helpMessageWasSent = FALSE;
 
 //_____________
 // FUNCTION PROTOTYPES:
@@ -102,14 +141,16 @@ void usart2_writeChar(char msg_char);
 void usart2_writeString(char *msg_string);
 char usart2_readChar(void);
 void resetInputValueStruct(struct inputValue_struct_type* iValStr_pointer, size_t stringSize);
-void printParameterWasSetMessage(char parameterChar);
+void printParameterWasSetMessage(char* parameterString);
 char *convertDoubleToString(double input);
 void usart2_writePIDParameters(PIDController PID);
 void USART2_IRQHandler(void);
 void ADC1_init();
 float ADC1_read();
 void DAC1_init();
-void DAC1_writeOutput(float percent);
+void DAC1_writeOutput(float fraction);
+void  PIDController_Init(PIDController *pid);
+float PIDController_Update(PIDController *pid, float measurement);
 
 //_____________
 // FUNCTIONS:
@@ -196,10 +237,10 @@ void resetInputValueStruct(struct inputValue_struct_type* iValStr_pointer, size_
 }
 
 
-void printParameterWasSetMessage(char parameterChar)
+void printParameterWasSetMessage(char* parameterString)
 {
 	char message[40];
-	sprintf(message, " was written to %c ", parameterChar);
+	sprintf(message, " was written to %s ", parameterString);
 	usart2_writeString(message);
 }
 
@@ -356,37 +397,37 @@ void USART2_IRQHandler(void)
 				case 'P':
 				case 'p':
 					pid.Kp = finalValue;
-					printParameterWasSetMessage('Kp');
+					printParameterWasSetMessage("Kp");
 					break;
 
 				case 'I':
 				case 'i':
 					pid.Ki = finalValue;
-					printParameterWasSetMessage('Ki');
+					printParameterWasSetMessage("Ki");
 					break;
 
 				case 'D':
 				case 'd':
 					pid.Kd = finalValue;
-					printParameterWasSetMessage('Kd');
+					printParameterWasSetMessage("Kd");
 					break;
 
 				case 'S':
 				case 's':
 					pid.setpoint = finalValue;
-					printParameterWasSetMessage('Setpoint');
+					printParameterWasSetMessage("Setpoint");
 					break;
 
 				case 'W':
 				case 'w':
 					pid.limMaxIntegrator = finalValue;
-					printParameterWasSetMessage('Wind up limit');
+					printParameterWasSetMessage("Wind up limit");
 					break;
 
 				case 'T':
 				case 't':
 					pid.tau = finalValue;
-					printParameterWasSetMessage('tau');
+					printParameterWasSetMessage("tau");
 					break;
 	
 				default:
@@ -437,11 +478,90 @@ void DAC1_init()
 	// DAC in normal mode with output buffer by default
 }
 
-void DAC1_writeOutput(float percent)
+void DAC1_writeOutput(float fraction)
 {
-	uint32_t regData = (int) percent * 0xFFF; // convert input signal to DAC register data
-	DAC1->DHR12R1 = regData; // write to 12 bit right alligned DAC output data
+	uint32_t regData = fraction * 0xFFF; // convert input signal to DAC register data
+	DAC->DHR12R1 = regData; // write to 12 bit right alligned DAC output data
 }
+
+void PIDController_Init(PIDController *pid) {
+
+	/* Clear controller variables */
+	pid->signOfPID = 1;
+	pid->integrator = 0.0f;
+	pid->prevError  = 0.0f;
+
+	pid->differentiator  = 0.0f;
+	pid->prevMeasurement = 0.0f;
+
+	pid->out = 0.0f;
+
+}
+
+float PIDController_Update(PIDController *pid, float measurement) {
+
+	/*
+	* Error signal
+	*/
+    float error = (pid->setpoint - measurement) * pid->signOfPID;
+
+
+	/*
+	* Proportional
+	*/
+    float proportional = pid->Kp * error;
+
+
+	/*
+	* Integral
+	*/
+    pid->integrator = pid->integrator + 0.5f * pid->Ki * pid->T * (error + pid->prevError);
+
+	/* Anti-wind-up via integrator clamping */
+    if (pid->integrator > pid->limMaxIntegrator) {
+
+        pid->integrator = pid->limMaxIntegrator;
+
+    } else if (pid->integrator < pid->limMinIntegrator) {
+
+        pid->integrator = pid->limMinIntegrator;
+
+    }
+
+
+	/*
+	* Derivative (band-limited differentiator)
+	*/
+		
+    pid->differentiator = -(2.0f * pid->Kd * (measurement - pid->prevMeasurement)	/* Note: derivative on measurement, therefore minus sign in front of equation! */
+                        + (2.0f * pid->tau - pid->T) * pid->differentiator)
+                        / (2.0f * pid->tau + pid->T);
+
+
+	/*
+	* Compute output and apply limits
+	*/
+    pid->out = proportional + pid->integrator + pid->differentiator;
+
+    if (pid->out > pid->limMaxOut) {
+
+        pid->out = pid->limMaxOut;
+
+    } else if (pid->out < pid->limMinOut) {
+
+        pid->out = pid->limMinOut;
+
+    }
+
+	/* Store error and measurement for later use */
+    pid->prevError       = error;
+    pid->prevMeasurement = measurement;
+
+	/* Return controller output */
+    return pid->out;
+
+}
+
 
 int main()
 {
