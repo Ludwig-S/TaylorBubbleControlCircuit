@@ -4,9 +4,6 @@
 #include <stdint.h>
 
 
-// variable declarations:
-extern PIDController pid;
-
 typedef struct {
 
 	// PID parameters
@@ -42,6 +39,8 @@ typedef struct {
 	float out;
 
 } PIDController;
+
+extern PIDController pid;
 
 
 void  PIDController_Init(PIDController *pid);

@@ -1,6 +1,8 @@
 #include "main.h"
 #include "USART.h"
 #include "PID.h"
+#include "ADC.h"
+#include "DAC.h"
 
 #include <stdint.h>
 #include <stddef.h>
@@ -9,18 +11,11 @@
 
 // variable definitions:
 char inputParameter_char;
-struct inputValue_struct_type
-{
-	int8_t index;
-	char inputChar[MAX_AMOUNT_INPUT_DIGITS];
-} inputValue_struct;
-char valueOfParameter_string[MAX_AMOUNT_INPUT_DIGITS];
 // this varialbe specifies the interpreted meaning of the USART input:
-enum USART_InputSpecifier_type
-{
-	PARAMETER = 1,	// the USART input describes the parameter
-	VALUE = 2		// the USART input describes the value to which the parameter will be set
-} inputSpecifier;
+
+struct inputValue_struct_type inputValue_struct;
+char valueOfParameter_string[MAX_AMOUNT_INPUT_DIGITS];
+enum USART_InputSpecifier_type inputSpecifier;
 const char* helpMessage = "Type 'P', 'I', 'D' for writing PID gain parameters, 'A' for reading analog input, 'S' for writing setpoint, 'W' for writing wind up limit, 'T' for writing time constant of low pass filter of derivative\n";
 enum boolean
 {

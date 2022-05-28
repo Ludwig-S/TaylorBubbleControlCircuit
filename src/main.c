@@ -40,12 +40,13 @@ Active IRQHandlers:
 
 */
 
-// GLOBAL INITIALISATIONS:
+// Global variable definitions:
 PIDController pid = {PID_SETPOINT, PID_SIGN, PID_KP, PID_KI, PID_KD,
 						PID_TAU,
 						PID_OUT_LIM_MIN, PID_OUT_LIM_MAX,
 			PID_INT_LIM_MIN, PID_INT_LIM_MAX,
 						ADC_SAMPLEPERIOD };
+// USART
 
 
 int main()

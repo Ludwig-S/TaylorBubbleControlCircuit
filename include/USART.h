@@ -8,14 +8,23 @@
 
 // variable declarations:
 extern char inputParameter_char;
-extern struct inputValue_struct_type inputValue_struct;
+extern struct inputValue_struct_type
+{
+	int8_t index;
+	char inputChar[MAX_AMOUNT_INPUT_DIGITS];
+} inputValue_struct;
+// extern struct inputValue_struct_type inputValue_struct;
 extern char valueOfParameter_string[MAX_AMOUNT_INPUT_DIGITS];
-extern enum inputSpecifier;
+extern enum USART_InputSpecifier_type
+{
+	PARAMETER = 1,	// the USART input describes the parameter
+	VALUE = 2		// the USART input describes the value to which the parameter will be set
+} inputSpecifier;
+// extern enum USART_InputSpecifier_type inputSpecifier;
 extern const char* helpMessage;
 extern enum boolean helpMessageWasSent;
 
-
-// function prototypes
+// function declarations:
 void usart2_init(void);
 void usart2_writeChar(char msg_char);
 void usart2_writeString(char *msg_string);

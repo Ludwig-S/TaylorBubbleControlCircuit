@@ -2,7 +2,6 @@
 #define MAIN_H
 
 #include "stm32f4xx.h"                  // Device header
-#include "PID.h"
 
 //______________________________________________________________
 // MACROS:
