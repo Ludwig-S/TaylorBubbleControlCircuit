@@ -25,12 +25,7 @@ Type in serial monitor:
 'T' for writing time constant of low pass filter of derivative
 __________________________________________________________________________________________
 
-ToDo:
-- convert data input of tau to low pass frequency
-- make subfiles
-- test PID (in process)
 
-_______________________________________________
 GPIO pin overview:
 
 PA1		Analog Input
