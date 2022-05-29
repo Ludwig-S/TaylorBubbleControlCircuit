@@ -5,6 +5,9 @@
 #include "DAC.h"
 
 #include <stdint.h>
+#include <stdlib.h>
+#include <math.h>  
+#include <stdio.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -16,7 +19,9 @@ char inputParameter_char;
 struct inputValue_struct_type inputValue_struct;
 char valueOfParameter_string[MAX_AMOUNT_INPUT_DIGITS];
 enum USART_InputSpecifier_type inputSpecifier;
-char* helpMessage = "Type 'P', 'I', 'D' for writing PID gain parameters, 'A' for reading analog input, 'S' for writing setpoint, 'W' for writing wind up limit, 'T' for writing time constant of low pass filter of derivative\n";
+// help message:
+// char* helpMessage = "Type 'P', 'I', 'D' for writing PID gain parameters, 'A' for reading analog input, 'S' for writing setpoint, 'W' for writing wind up limit, 'T' for writing time constant of low pass filter of derivative\n";
+char* helpMessage = "";
 enum boolean
 {
 	FALSE,
@@ -51,7 +56,7 @@ void usart2_writeChar(char msg_char)
 }
 
 
-void usart2_writeString(char *msg_string)
+void usart2_printString(char *msg_string)
 {
 	size_t msg_string_len = strlen(msg_string); // get size of string pointed to by *msg_string
 	// print each character of input string
@@ -84,7 +89,7 @@ void printParameterWasSetMessage(char* parameterString)
 {
 	char message[40];
 	sprintf(message, " was written to %s ", parameterString);
-	usart2_writeString(message);
+	usart2_printString(message);
 }
 
 
@@ -113,28 +118,28 @@ char *convertDoubleToString(double input)
 }
 
 
-void usart2_writePIDParameters(PIDController PID)
+void usart2_printPIDParameters(PIDController PID)
 {
-	usart2_writeString("  Setpoint: ");
-	usart2_writeString(convertDoubleToString(PID.setpoint));
-	usart2_writeString("  Kp: ");
-	usart2_writeString(convertDoubleToString(PID.Kp));
-	usart2_writeString("  Ki: ");
-	usart2_writeString(convertDoubleToString(PID.Ki));
-	usart2_writeString("  Kd: ");
-	usart2_writeString(convertDoubleToString(PID.Kd));
-	usart2_writeString("  Integrator windup limit: ");
-	usart2_writeString(convertDoubleToString(PID.limMaxIntegrator));
-	usart2_writeString("  Low pass time constant: ");
-	usart2_writeString(convertDoubleToString(PID.tau));
+	usart2_printString("  Setpoint: ");
+	usart2_printString(convertDoubleToString(PID.setpoint));
+	usart2_printString("  Kp: ");
+	usart2_printString(convertDoubleToString(PID.Kp));
+	usart2_printString("  Ki: ");
+	usart2_printString(convertDoubleToString(PID.Ki));
+	usart2_printString("  Kd: ");
+	usart2_printString(convertDoubleToString(PID.Kd));
+	usart2_printString("  Integrator windup limit: ");
+	usart2_printString(convertDoubleToString(PID.limMaxIntegrator));
+	usart2_printString("  Low pass time constant: ");
+	usart2_printString(convertDoubleToString(PID.tau));
 
 	if (PID.signOfPID==1)
 	{
-		usart2_writeString("  Error = setpoint - measurement\n");
+		usart2_printString("  Error = setpoint - measurement\n");
 	}
 	else
 	{
-		usart2_writeString("  Error = measurement - setpoint\n");
+		usart2_printString("  Error = measurement - setpoint\n");
 	}
 }
 
@@ -151,63 +156,63 @@ void USART2_IRQHandler(void)
 		{
 			case 'P':
 			case 'p':
-				usart2_writeString("Please type Kp value of PID: ");
+				usart2_printString("Please type Kp value of PID: ");
 				inputSpecifier = VALUE;
 				helpMessageWasSent = FALSE;
 				break;
 			
 			case 'I':
 			case 'i':
-				usart2_writeString("Please type Ki value of PID: ");
+				usart2_printString("Please type Ki value of PID: ");
 				inputSpecifier = VALUE;
 				helpMessageWasSent = FALSE;
 				break;
 
 			case 'D':
 			case 'd':
-				usart2_writeString("Please type Kd value of PID: ");
+				usart2_printString("Please type Kd value of PID: ");
 				inputSpecifier = VALUE;
 				helpMessageWasSent = FALSE;
 				break;
 
 			case 'S':
 			case 's':
-				usart2_writeString("Please type setpoint of PID: ");
+				usart2_printString("Please type setpoint of PID: ");
 				inputSpecifier = VALUE;
 				helpMessageWasSent = FALSE;
 				break;
 
 			case 'W':
 			case 'w':
-				usart2_writeString("Please type wind up limit of PID: ");
+				usart2_printString("Please type wind up limit of PID: ");
 				inputSpecifier = VALUE;
 				helpMessageWasSent = FALSE;
 				break;
 
 			case 'T':
 			case 't':
-				usart2_writeString("Please type time constant of lowpass for D: ");
+				usart2_printString("Please type time constant of lowpass for D: ");
 				inputSpecifier = VALUE;
 				helpMessageWasSent = FALSE;
 				break;
 
 			case 'A':
 			case 'a':
-				usart2_writeString(convertDoubleToString(ADC1_read()));
-				usart2_writeString("\n");
+				usart2_printString(convertDoubleToString(ADC1_read()));
+				usart2_printString("\n");
 				helpMessageWasSent = FALSE;
 				break;
 
 			case '-':
 				pid.signOfPID = -pid.signOfPID;
-				usart2_writeString("Sign of PID was inverted! ");
+				usart2_printString("Sign of PID was inverted! ");
 				helpMessageWasSent = FALSE;
 
 			default:
 				if (helpMessageWasSent == FALSE)
 				{
-					usart2_writeString(helpMessage);
-					usart2_writePIDParameters(pid);
+					usart2_printString(helpMessage);
+					usart2_printPIDParameters(pid);
 				}				
 				helpMessageWasSent = TRUE;
 		}
@@ -274,13 +279,13 @@ void USART2_IRQHandler(void)
 					break;
 	
 				default:
-					usart2_writeString("Oopsie Daisey! Something went wrong! :(\n");
+					usart2_printString("Oopsie Daisey! Something went wrong! :(\n");
 			
 			
 			}
 			resetInputValueStruct(&inputValue_struct, MAX_AMOUNT_INPUT_DIGITS);
 			inputSpecifier = PARAMETER;	
-			//usart2_writePIDParameters(PIDparams);
+			//usart2_printPIDParameters(PIDparams);
 
 		}
 
@@ -289,8 +294,8 @@ void USART2_IRQHandler(void)
 		{
 			resetInputValueStruct(&inputValue_struct, MAX_AMOUNT_INPUT_DIGITS);
 			inputSpecifier = PARAMETER;
-			usart2_writeString(" Input cancelled! ");
-			//usart2_writePIDParameters(PIDparams);
+			usart2_printString(" Input cancelled! ");
+			//usart2_printPIDParameters(PIDparams);
 		}
 	}
 }

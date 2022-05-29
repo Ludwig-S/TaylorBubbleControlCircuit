@@ -10,18 +10,26 @@
 #include <string.h>
 
 /*
-ToDo:
-- convert data input of tau to low pass frequency
-- make subfiles
-- test PID (in process)
-
-_______________________________________________
+__________________________________________________________________________________________
 USART settings: 
 Baudrate: 9600 BdpS
 8 data bits
 1 stop bit
 no parity, no flow control
-_______________________________________________
+
+Type in serial monitor:
+'P', 'I', 'D' for writing PID gain parameters, 
+'A' for reading analog input,
+'S' for writing setpoint, 
+'W' for writing maximum wind up limit, 
+'T' for writing time constant of low pass filter of derivative
+__________________________________________________________________________________________
+
+ToDo:
+- convert data input of tau to low pass frequency
+- make subfiles
+- test PID (in process)
+
 _______________________________________________
 GPIO pin overview:
 
@@ -53,7 +61,7 @@ int main()
 	DAC1_init();
 	PIDController_Init(&pid);
 
-	usart2_writeString(helpMessage);
+	usart2_printString(helpMessage);
 	float outputSignal_float;
 
 	while (1)

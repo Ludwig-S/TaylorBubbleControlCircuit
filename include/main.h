@@ -16,7 +16,7 @@
 #define PID_KI  0.5f
 #define PID_KD  0.25f
 
-#define PID_TAU 0.02f // Tau = RC, f_lowpass = 1/(2*pi*Tau)
+#define PID_TAU 0.02f // Tau = RC, f_lowpass = 1/(2*pi*Tau) => Tau = 1 / (2*pi*f_lowpass)
 
 #define PID_OUT_LIM_MIN  0
 #define PID_OUT_LIM_MAX  3.3f
