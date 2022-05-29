@@ -1,7 +1,12 @@
+#include "main.h"
 #include "PID.h"
 
 // variable definitions:
-PIDController pid;
+PIDController pid = {PID_SETPOINT, PID_SIGN, PID_KP, PID_KI, PID_KD,
+						PID_TAU,
+						PID_OUT_LIM_MIN, PID_OUT_LIM_MAX,
+			PID_INT_LIM_MIN, PID_INT_LIM_MAX,
+						ADC_SAMPLEPERIOD };
 
 
 // function definitions

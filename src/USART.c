@@ -16,7 +16,7 @@ char inputParameter_char;
 struct inputValue_struct_type inputValue_struct;
 char valueOfParameter_string[MAX_AMOUNT_INPUT_DIGITS];
 enum USART_InputSpecifier_type inputSpecifier;
-const char* helpMessage = "Type 'P', 'I', 'D' for writing PID gain parameters, 'A' for reading analog input, 'S' for writing setpoint, 'W' for writing wind up limit, 'T' for writing time constant of low pass filter of derivative\n";
+char* helpMessage = "Type 'P', 'I', 'D' for writing PID gain parameters, 'A' for reading analog input, 'S' for writing setpoint, 'W' for writing wind up limit, 'T' for writing time constant of low pass filter of derivative\n";
 enum boolean
 {
 	FALSE,

@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-// variable declarations:
+// global variable declarations:
 extern char inputParameter_char;
 extern struct inputValue_struct_type
 {
@@ -21,7 +21,7 @@ extern enum USART_InputSpecifier_type
 	VALUE = 2		// the USART input describes the value to which the parameter will be set
 } inputSpecifier;
 // extern enum USART_InputSpecifier_type inputSpecifier;
-extern const char* helpMessage;
+extern char* helpMessage;
 extern enum boolean helpMessageWasSent;
 
 // function declarations:

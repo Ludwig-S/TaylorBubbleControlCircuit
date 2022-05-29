@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-
+// global variable declarations:
 typedef struct {
 
 	// PID parameters
@@ -42,7 +42,7 @@ typedef struct {
 
 extern PIDController pid;
 
-
+// function declarations:
 void  PIDController_Init(PIDController *pid);
 float PIDController_Update(PIDController *pid, float measurement);
 
