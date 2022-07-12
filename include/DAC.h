@@ -6,7 +6,7 @@
 void DAC1_init();
 void DAC1_writeOutput(float fraction);
 
-void PWM_init(uint32_t dutyCycle);
+void PWM_init(void);
 void PWM_setDutyCycle(uint32_t dutyCycle);
 
 
