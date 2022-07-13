@@ -4,20 +4,20 @@ EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 1
-Title ""
-Date ""
-Rev ""
-Comp ""
+Title "Taylor Bubble Control Circuit"
+Date "2022-07-07"
+Rev "1.0"
+Comp "TU Dresden"
 Comment1 ""
 Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L Amplifier_Operational:TL062 U2
+L Amplifier_Operational:TL062 U3
 U 1 1 62CD608B
 P 2950 2550
-F 0 "U2" H 2950 2917 50  0000 C CNN
+F 0 "U3" H 2950 2917 50  0000 C CNN
 F 1 "TL062" H 2950 2826 50  0000 C CNN
 F 2 "" H 2950 2550 50  0001 C CNN
 F 3 "http://www.ti.com/lit/ds/symlink/tl061.pdf" H 2950 2550 50  0001 C CNN
@@ -25,10 +25,10 @@ F 3 "http://www.ti.com/lit/ds/symlink/tl061.pdf" H 2950 2550 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Amplifier_Operational:TL062 U2
+L Amplifier_Operational:TL062 U3
 U 3 1 62CDCC37
 P 5650 1650
-F 0 "U2" H 5608 1696 50  0000 L CNN
+F 0 "U3" H 5608 1696 50  0000 L CNN
 F 1 "TL062" H 5608 1605 50  0000 L CNN
 F 2 "" H 5650 1650 50  0001 C CNN
 F 3 "http://www.ti.com/lit/ds/symlink/tl061.pdf" H 5650 1650 50  0001 C CNN
@@ -36,10 +36,10 @@ F 3 "http://www.ti.com/lit/ds/symlink/tl061.pdf" H 5650 1650 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:R_POT RV?
+L Device:R_POT RV1
 U 1 1 62CF5B88
 P 3450 2800
-F 0 "RV?" V 3335 2800 50  0000 C CNN
+F 0 "RV1" V 3335 2800 50  0000 C CNN
 F 1 "R_POT" V 3244 2800 50  0000 C CNN
 F 2 "" H 3450 2800 50  0001 C CNN
 F 3 "~" H 3450 2800 50  0001 C CNN
@@ -53,10 +53,10 @@ Wire Wire Line
 Wire Wire Line
 	2650 2800 2650 2650
 $Comp
-L power:GND #PWR?
+L power:GND #PWR01
 U 1 1 62CF9495
 P 2500 2450
-F 0 "#PWR?" H 2500 2200 50  0001 C CNN
+F 0 "#PWR01" H 2500 2200 50  0001 C CNN
 F 1 "GND" H 2505 2277 50  0000 C CNN
 F 2 "" H 2500 2450 50  0001 C CNN
 F 3 "" H 2500 2450 50  0001 C CNN
@@ -68,10 +68,10 @@ Wire Wire Line
 Wire Wire Line
 	2650 2800 3300 2800
 $Comp
-L power:GND #PWR?
+L power:GND #PWR03
 U 1 1 62D170A5
 P 2650 2900
-F 0 "#PWR?" H 2650 2650 50  0001 C CNN
+F 0 "#PWR03" H 2650 2650 50  0001 C CNN
 F 1 "GND" H 2655 2727 50  0000 C CNN
 F 2 "" H 2650 2900 50  0001 C CNN
 F 3 "" H 2650 2900 50  0001 C CNN
@@ -79,10 +79,10 @@ F 3 "" H 2650 2900 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Regulator_Linear:L7805 U1
+L Regulator_Linear:L7805 U2
 U 1 1 62D18C8D
 P 3350 1350
-F 0 "U1" H 3350 1592 50  0000 C CNN
+F 0 "U2" H 3350 1592 50  0000 C CNN
 F 1 "L7805CV-DG" H 3350 1501 50  0000 C CNN
 F 2 "" H 3375 1200 50  0001 L CIN
 F 3 "http://www.st.com/content/ccc/resource/technical/document/datasheet/41/4f/b3/b0/12/d4/47/88/CD00000444.pdf/files/CD00000444.pdf/jcr:content/translations/en.CD00000444.pdf" H 3350 1300 50  0001 C CNN
@@ -101,10 +101,10 @@ F 3 "~" H 2750 1500 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:CP C?
+L Device:CP C2
 U 1 1 62D1B42A
 P 3750 1500
-F 0 "C?" H 3868 1546 50  0000 L CNN
+F 0 "C2" H 3868 1546 50  0000 L CNN
 F 1 "330n" H 3868 1455 50  0000 L CNN
 F 2 "" H 3788 1350 50  0001 C CNN
 F 3 "~" H 3750 1500 50  0001 C CNN
@@ -116,10 +116,10 @@ Wire Wire Line
 Wire Wire Line
 	3050 1350 2750 1350
 $Comp
-L power:GND #PWR?
+L power:GND #PWR04
 U 1 1 62D1D949
 P 2750 1650
-F 0 "#PWR?" H 2750 1400 50  0001 C CNN
+F 0 "#PWR04" H 2750 1400 50  0001 C CNN
 F 1 "GND" H 2755 1477 50  0000 C CNN
 F 2 "" H 2750 1650 50  0001 C CNN
 F 3 "" H 2750 1650 50  0001 C CNN
@@ -127,10 +127,10 @@ F 3 "" H 2750 1650 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:GND #PWR?
+L power:GND #PWR06
 U 1 1 62D1DB97
 P 3750 1650
-F 0 "#PWR?" H 3750 1400 50  0001 C CNN
+F 0 "#PWR06" H 3750 1400 50  0001 C CNN
 F 1 "GND" H 3755 1477 50  0000 C CNN
 F 2 "" H 3750 1650 50  0001 C CNN
 F 3 "" H 3750 1650 50  0001 C CNN
@@ -138,10 +138,10 @@ F 3 "" H 3750 1650 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:GND #PWR?
+L power:GND #PWR05
 U 1 1 62D1E0D5
 P 3350 1650
-F 0 "#PWR?" H 3350 1400 50  0001 C CNN
+F 0 "#PWR05" H 3350 1400 50  0001 C CNN
 F 1 "GND" H 3355 1477 50  0000 C CNN
 F 2 "" H 3350 1650 50  0001 C CNN
 F 3 "" H 3350 1650 50  0001 C CNN
@@ -150,10 +150,10 @@ F 3 "" H 3350 1650 50  0001 C CNN
 $EndComp
 Connection ~ 2750 1350
 $Comp
-L power:GND #PWR?
+L power:GND #PWR010
 U 1 1 62D27363
 P 5550 1950
-F 0 "#PWR?" H 5550 1700 50  0001 C CNN
+F 0 "#PWR010" H 5550 1700 50  0001 C CNN
 F 1 "GND" H 5555 1777 50  0000 C CNN
 F 2 "" H 5550 1950 50  0001 C CNN
 F 3 "" H 5550 1950 50  0001 C CNN
@@ -163,21 +163,21 @@ $EndComp
 Text Notes 3550 1650 0    50   ~ 0
 close to U1
 $Comp
-L Device:C C?
+L Device:C C4
 U 1 1 62D4D672
 P 5150 1500
-F 0 "C?" H 5035 1454 50  0000 R CNN
-F 1 "C" H 5035 1545 50  0000 R CNN
+F 0 "C4" H 5035 1454 50  0000 R CNN
+F 1 "100n" H 5035 1545 50  0000 R CNN
 F 2 "" H 5188 1350 50  0001 C CNN
 F 3 "~" H 5150 1500 50  0001 C CNN
 	1    5150 1500
 	-1   0    0    1   
 $EndComp
 $Comp
-L power:GND #PWR?
+L power:GND #PWR09
 U 1 1 62D4E897
 P 5150 1650
-F 0 "#PWR?" H 5150 1400 50  0001 C CNN
+F 0 "#PWR09" H 5150 1400 50  0001 C CNN
 F 1 "GND" H 5155 1477 50  0000 C CNN
 F 2 "" H 5150 1650 50  0001 C CNN
 F 3 "" H 5150 1650 50  0001 C CNN
@@ -185,7 +185,7 @@ F 3 "" H 5150 1650 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Text Notes 4950 1650 0    50   ~ 0
-close to V+
+close to U3
 Wire Wire Line
 	5150 1350 5550 1350
 Wire Wire Line
@@ -225,10 +225,10 @@ Connection ~ 5150 1350
 Wire Wire Line
 	3950 3900 4100 3900
 $Comp
-L power:GND #PWR?
+L power:GND #PWR07
 U 1 1 62DDF2C7
 P 4100 4200
-F 0 "#PWR?" H 4100 3950 50  0001 C CNN
+F 0 "#PWR07" H 4100 3950 50  0001 C CNN
 F 1 "GND" H 4105 4027 50  0000 C CNN
 F 2 "" H 4100 4200 50  0001 C CNN
 F 3 "" H 4100 4200 50  0001 C CNN
@@ -236,11 +236,11 @@ F 3 "" H 4100 4200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:C C?
+L Device:C C3
 U 1 1 62DDF2C1
 P 4100 4050
-F 0 "C?" H 3985 4004 50  0000 R CNN
-F 1 "C" H 3985 4095 50  0000 R CNN
+F 0 "C3" H 3985 4004 50  0000 R CNN
+F 1 "100n" H 3985 4095 50  0000 R CNN
 F 2 "" H 4138 3900 50  0001 C CNN
 F 3 "~" H 4100 4050 50  0001 C CNN
 	1    4100 4050
@@ -258,10 +258,10 @@ Connection ~ 2600 4100
 Wire Wire Line
 	2600 3900 2600 4100
 $Comp
-L Amplifier_Operational:TL062 U2
+L Amplifier_Operational:TL062 U3
 U 2 1 62CE49AF
 P 2900 3800
-F 0 "U2" H 2900 4167 50  0000 C CNN
+F 0 "U3" H 2900 4167 50  0000 C CNN
 F 1 "TL062" H 2900 4076 50  0000 C CNN
 F 2 "" H 2900 3800 50  0001 C CNN
 F 3 "http://www.ti.com/lit/ds/symlink/tl061.pdf" H 2900 3800 50  0001 C CNN
@@ -293,10 +293,10 @@ $EndComp
 Wire Wire Line
 	3200 4100 2600 4100
 $Comp
-L power:GND #PWR?
+L power:GND #PWR02
 U 1 1 62D6259C
 P 2600 4500
-F 0 "#PWR?" H 2600 4250 50  0001 C CNN
+F 0 "#PWR02" H 2600 4250 50  0001 C CNN
 F 1 "GND" H 2605 4327 50  0000 C CNN
 F 2 "" H 2600 4500 50  0001 C CNN
 F 3 "" H 2600 4500 50  0001 C CNN
@@ -308,10 +308,10 @@ Photo Diode Connectors
 Text Notes 4500 3500 0    50   ~ 0
 Servo Motor Connectors
 $Comp
-L power:GND #PWR?
+L power:GND #PWR08
 U 1 1 62DDD2CF
 P 4600 4000
-F 0 "#PWR?" H 4600 3750 50  0001 C CNN
+F 0 "#PWR08" H 4600 3750 50  0001 C CNN
 F 1 "GND" H 4605 3827 50  0000 C CNN
 F 2 "" H 4600 4000 50  0001 C CNN
 F 3 "" H 4600 4000 50  0001 C CNN
@@ -349,8 +349,6 @@ Wire Notes Line
 	2250 1500 1400 1500
 Wire Notes Line
 	1400 1500 1400 1200
-Text Notes 1250 1150 0    50   ~ 0
-8... 12 V Voltage Supply Input\n
 Wire Wire Line
 	1950 2800 2650 2800
 Connection ~ 2650 2800
@@ -439,7 +437,7 @@ Text Notes 9400 1950 0    50   ~ 0
 Text GLabel 9850 1950 2    50   Input ~ 0
 PWM_3v3
 Text Notes 9400 1550 0    50   ~ 0
-Analog In
+ADC input
 Text GLabel 9850 1550 2    50   Input ~ 0
 PhotoVoltage
 Wire Wire Line
@@ -466,10 +464,10 @@ Wire Wire Line
 Wire Wire Line
 	8650 4850 8650 4800
 $Comp
-L power:GND #PWR?
+L power:GND #PWR011
 U 1 1 62D8D228
 P 8650 4850
-F 0 "#PWR?" H 8650 4600 50  0001 C CNN
+F 0 "#PWR011" H 8650 4600 50  0001 C CNN
 F 1 "GND" H 8650 4700 50  0000 C CNN
 F 2 "" H 8650 4850 50  0001 C CNN
 F 3 "" H 8650 4850 50  0001 C CNN
@@ -491,4 +489,12 @@ NoConn ~ 9350 1450
 NoConn ~ 9350 1650
 NoConn ~ 9350 1750
 NoConn ~ 9350 1850
+Text Notes 2550 1650 0    50   ~ 0
+close to U1
+Text Notes 2550 2100 0    50   ~ 0
+Transimpedance amplifier
+Text Notes 2500 3350 0    50   ~ 0
+3.3V to 4.95V conversion
+Text Notes 1250 1150 0    50   ~ 0
+8... 12 V Voltage Supply Connector\n
 $EndSCHEMATC
