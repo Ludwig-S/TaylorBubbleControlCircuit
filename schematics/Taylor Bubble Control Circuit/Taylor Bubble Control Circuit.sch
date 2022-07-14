@@ -188,9 +188,9 @@ Wire Wire Line
 Connection ~ 3450 2550
 Text Notes 3500 2550 0    50   ~ 0
 Photo Voltage
-Text Notes 1950 2800 0    50   ~ 0
-Kathode
 Text Notes 1950 2900 0    50   ~ 0
+Kathode
+Text Notes 1950 2800 0    50   ~ 0
 Anode
 Wire Wire Line
 	2200 1350 2750 1350
@@ -494,8 +494,8 @@ Text Notes 5250 1300 0    50   ~ 0
 Supply Voltage Pins \n    of U3
 Text Notes 3000 1000 0    50   ~ 0
 5V voltage regulator
-Text Notes 3650 2900 0    50   ~ 0
-choose actual resistor value \ndepending on photo current
+Text Notes 3650 2950 0    50   ~ 0
+choose actual resistor value \ndepending on the current of \nthe photo diode
 $Comp
 L Device:R_POT_TRIM RV1
 U 1 1 62D00CBC
