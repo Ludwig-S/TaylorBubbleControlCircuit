@@ -198,7 +198,7 @@ $Comp
 L Connector_Generic:Conn_01x01 J1
 U 1 1 62D22786
 P 2000 1350
-F 0 "J1" H 2150 1300 50  0000 C CNN
+F 0 "J1" H 2100 1300 50  0000 C CNN
 F 1 "Banana Plug" H 2300 1400 50  0000 C CNN
 F 2 "" H 2000 1350 50  0001 C CNN
 F 3 "~" H 2000 1350 50  0001 C CNN
@@ -471,7 +471,7 @@ L MCU_ST_STM32F4:STM32F446RETx U1
 U 1 1 62D0A671
 P 8650 2950
 F 0 "U1" H 8650 750 50  0000 C CNN
-F 1 "STM32 Nucleo F446RE Board" H 8650 650 50  0000 C CNN
+F 1 "STM32 NUCLEO F446RE Board" H 8650 650 50  0000 C CNN
 F 2 "Package_QFP:LQFP-64_10x10mm_P0.5mm" H 8050 1250 50  0001 R CNN
 F 3 "https://www.st.com/resource/en/user_manual/um1724-stm32-nucleo64-boards-mb1136-stmicroelectronics.pdf" H 8650 2950 50  0001 C CNN
 F 4 "https://www.reichelt.de/nucleo-64-arm-cortex-stm32-f446-serie-nucleo-f446re-p217196.html?search=stm32f446" H 8650 2950 50  0001 C CNN "Reichelt link"
@@ -488,8 +488,8 @@ Text Notes 2550 2100 0    50   ~ 0
 Transimpedance amplifier
 Text Notes 2500 3350 0    50   ~ 0
 3.3V to 4.95V PWM conversion
-Text Notes 1250 1150 0    50   ~ 0
-8... 12 V Voltage Supply Connector\n
+Text Notes 1400 1050 0    50   ~ 0
+Voltage Supply Connectors\n
 Text Notes 5250 1300 0    50   ~ 0
 Supply Voltage Pins \n    of U3
 Text Notes 3000 1000 0    50   ~ 0
@@ -511,8 +511,8 @@ $Comp
 L Connector_Generic:Conn_01x01 J2
 U 1 1 62D04412
 P 2000 1650
-F 0 "J2" H 2150 1600 50  0000 C CNN
-F 1 "Banana Plug" H 2300 1700 50  0000 C CNN
+F 0 "J2" H 2150 1650 50  0000 C CNN
+F 1 "Banana Plug" H 2300 1750 50  0000 C CNN
 F 2 "" H 2000 1650 50  0001 C CNN
 F 3 "~" H 2000 1650 50  0001 C CNN
 F 4 "https://www.reichelt.de/bananenbuchse-4mm-vollisoliert-schwarz-bb-4-sw-p4897.html?&trstct=pos_3&nbc=1" H 2000 1650 50  0001 C CNN "Reichelt link"
@@ -532,10 +532,14 @@ F 3 "" H 2200 1650 50  0001 C CNN
 $EndComp
 Wire Notes Line
 	1400 1900 2350 1900
+Text Notes 1800 1250 0    50   ~ 0
+8... 12V
+Text Notes 1900 1600 0    50   ~ 0
+GND
 Wire Notes Line
-	2350 1900 2350 1200
+	1400 1100 2350 1100
 Wire Notes Line
-	1400 1200 2350 1200
+	2350 1100 2350 1900
 Wire Notes Line
-	1400 1200 1400 1900
+	1400 1900 1400 1100
 $EndSCHEMATC
