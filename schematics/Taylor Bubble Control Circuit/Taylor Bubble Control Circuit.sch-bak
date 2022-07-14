@@ -20,7 +20,7 @@ P 2950 2550
 F 0 "U3" H 2950 2917 50  0000 C CNN
 F 1 "TL062" H 2950 2826 50  0000 C CNN
 F 2 "" H 2950 2550 50  0001 C CNN
-F 3 "http://www.ti.com/lit/ds/symlink/tl061.pdf" H 2950 2550 50  0001 C CNN
+F 3 "https://www.reichelt.de/index.html?ACTION=7&LA=3&OPEN=0&INDEX=0&FILENAME=A200%2FTL062%23STM.pdf" H 2950 2550 50  0001 C CNN
 F 4 "https://www.reichelt.de/operationsverstaerker-2-fach-dip-8-tl-062-dip-p21552.html?&GROUP=A2C4&START=0&SORT=preis&OFFSET=16&nbc=1" H 2950 2550 50  0001 C CNN "Reichelt link"
 	1    2950 2550
 	1    0    0    -1  
@@ -32,7 +32,7 @@ P 5650 1650
 F 0 "U3" H 5608 1696 50  0000 L CNN
 F 1 "TL062" H 5608 1605 50  0000 L CNN
 F 2 "" H 5650 1650 50  0001 C CNN
-F 3 "http://www.ti.com/lit/ds/symlink/tl061.pdf" H 5650 1650 50  0001 C CNN
+F 3 "https://www.reichelt.de/index.html?ACTION=7&LA=3&OPEN=0&INDEX=0&FILENAME=A200%2FTL062%23STM.pdf" H 5650 1650 50  0001 C CNN
 F 4 "https://www.reichelt.de/operationsverstaerker-2-fach-dip-8-tl-062-dip-p21552.html?&GROUP=A2C4&START=0&SORT=preis&OFFSET=16&nbc=1" H 5650 1650 50  0001 C CNN "Reichelt link"
 	3    5650 1650
 	1    0    0    -1  
@@ -76,7 +76,7 @@ P 3350 1350
 F 0 "U2" H 3350 1592 50  0000 C CNN
 F 1 "L7805CV-DG" H 3350 1501 50  0000 C CNN
 F 2 "" H 3375 1200 50  0001 L CIN
-F 3 "http://www.st.com/content/ccc/resource/technical/document/datasheet/41/4f/b3/b0/12/d4/47/88/CD00000444.pdf/files/CD00000444.pdf/jcr:content/translations/en.CD00000444.pdf" H 3350 1300 50  0001 C CNN
+F 3 "https://www.reichelt.de/index.html?ACTION=7&LA=3&OPEN=0&INDEX=0&FILENAME=A200%2FL78_ENG_TDS.pdf" H 3350 1300 50  0001 C CNN
 F 4 "https://www.reichelt.de/spannungsregler-fest-5-v-1-5a-4-to-220-l7805cv-dg-stm-p216677.html?&GROUP=A2A2&START=0&SORT=preis&OFFSET=16&nbc=1" H 3350 1350 50  0001 C CNN "Reichelt link"
 	1    3350 1350
 	1    0    0    -1  
@@ -88,7 +88,7 @@ P 2750 1500
 F 0 "C1" H 2868 1546 50  0000 L CNN
 F 1 "330n" H 2868 1455 50  0000 L CNN
 F 2 "" H 2788 1350 50  0001 C CNN
-F 3 "~" H 2750 1500 50  0001 C CNN
+F 3 "https://www.reichelt.de/index.html?ACTION=7&LA=3&OPEN=0&INDEX=0&FILENAME=B300%2FSM_TRANS.pdf" H 2750 1500 50  0001 C CNN
 F 4 "https://www.reichelt.de/subminiatur-elko-radial-330-nf-63-v-rm-1-5-85-c-1000h-20--sm-0-33-63rad-p18159.html?&GROUP=B315&START=0&SORT=preis&OFFSET=16&nbc=1" H 2750 1500 50  0001 C CNN "Reichelt link"
 	1    2750 1500
 	1    0    0    -1  
@@ -100,7 +100,7 @@ P 3750 1500
 F 0 "C2" H 3868 1546 50  0000 L CNN
 F 1 "330n" H 3868 1455 50  0000 L CNN
 F 2 "" H 3788 1350 50  0001 C CNN
-F 3 "~" H 3750 1500 50  0001 C CNN
+F 3 "https://www.reichelt.de/index.html?ACTION=7&LA=3&OPEN=0&INDEX=0&FILENAME=B300%2FSM_TRANS.pdf" H 3750 1500 50  0001 C CNN
 F 4 "https://www.reichelt.de/subminiatur-elko-radial-330-nf-63-v-rm-1-5-85-c-1000h-20--sm-0-33-63rad-p18159.html?&GROUP=B315&START=0&SORT=preis&OFFSET=16&nbc=1" H 3750 1500 50  0001 C CNN "Reichelt link"
 	1    3750 1500
 	1    0    0    -1  
@@ -163,7 +163,7 @@ P 5150 1500
 F 0 "C4" H 5035 1454 50  0000 R CNN
 F 1 "100n" H 5035 1545 50  0000 R CNN
 F 2 "" H 5188 1350 50  0001 C CNN
-F 3 "~" H 5150 1500 50  0001 C CNN
+F 3 "https://www.reichelt.de/index.html?ACTION=7&LA=3&OPEN=0&INDEX=0&FILENAME=B300%2Fkerko.pdf" H 5150 1500 50  0001 C CNN
 F 4 "https://www.reichelt.de/keramik-kondensator-100-nf-20-80-y5v-50-100-v-rm-5-kerko-100n-p9265.html?&GROUP=B353&START=0&SORT=preis&OFFSET=16&nbc=1" H 5150 1500 50  0001 C CNN "Reichelt link"
 	1    5150 1500
 	-1   0    0    1   
@@ -238,7 +238,7 @@ P 4100 4050
 F 0 "C3" H 3985 4004 50  0000 R CNN
 F 1 "100n" H 3985 4095 50  0000 R CNN
 F 2 "" H 4138 3900 50  0001 C CNN
-F 3 "~" H 4100 4050 50  0001 C CNN
+F 3 "https://www.reichelt.de/index.html?ACTION=7&LA=3&OPEN=0&INDEX=0&FILENAME=B300%2Fkerko.pdf" H 4100 4050 50  0001 C CNN
 F 4 "https://www.reichelt.de/keramik-kondensator-100-nf-20-80-y5v-50-100-v-rm-5-kerko-100n-p9265.html?&GROUP=B353&START=0&SORT=preis&OFFSET=16&nbc=1" H 4100 4050 50  0001 C CNN "Reichelt link"
 	1    4100 4050
 	-1   0    0    1   
@@ -261,7 +261,7 @@ P 2900 3800
 F 0 "U3" H 2900 4167 50  0000 C CNN
 F 1 "TL062" H 2900 4076 50  0000 C CNN
 F 2 "" H 2900 3800 50  0001 C CNN
-F 3 "http://www.ti.com/lit/ds/symlink/tl061.pdf" H 2900 3800 50  0001 C CNN
+F 3 "https://www.reichelt.de/index.html?ACTION=7&LA=3&OPEN=0&INDEX=0&FILENAME=A200%2FTL062%23STM.pdf" H 2900 3800 50  0001 C CNN
 F 4 "https://www.reichelt.de/operationsverstaerker-2-fach-dip-8-tl-062-dip-p21552.html?&GROUP=A2C4&START=0&SORT=preis&OFFSET=16&nbc=1" H 2900 3800 50  0001 C CNN "Reichelt link"
 	2    2900 3800
 	1    0    0    -1  
@@ -473,7 +473,7 @@ P 8650 2950
 F 0 "U1" H 8650 750 50  0000 C CNN
 F 1 "STM32 Nucleo F446RE Board" H 8650 650 50  0000 C CNN
 F 2 "Package_QFP:LQFP-64_10x10mm_P0.5mm" H 8050 1250 50  0001 R CNN
-F 3 "http://www.st.com/st-web-ui/static/active/en/resource/technical/document/datasheet/DM00141306.pdf" H 8650 2950 50  0001 C CNN
+F 3 "https://www.st.com/resource/en/user_manual/um1724-stm32-nucleo64-boards-mb1136-stmicroelectronics.pdf" H 8650 2950 50  0001 C CNN
 F 4 "https://www.reichelt.de/nucleo-64-arm-cortex-stm32-f446-serie-nucleo-f446re-p217196.html?search=stm32f446" H 8650 2950 50  0001 C CNN "Reichelt link"
 	1    8650 2950
 	1    0    0    -1  

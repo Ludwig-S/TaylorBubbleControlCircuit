@@ -248,7 +248,7 @@ Text GLabel 3950 3900 0    50   Input ~ 0
 Wire Wire Line
 	2550 3700 2600 3700
 Text GLabel 2550 3700 0    50   Input ~ 0
-PWM_3v3
+PWM_3V3
 Wire Wire Line
 	2600 4100 2600 4200
 Connection ~ 2600 4100
@@ -427,7 +427,7 @@ Wire Wire Line
 Text Notes 9400 1950 0    50   ~ 0
 3.3V PWM
 Text GLabel 9850 1950 2    50   Input ~ 0
-PWM_3v3
+PWM_3V3
 Text Notes 9400 1550 0    50   ~ 0
 ADC input
 Text GLabel 9850 1550 2    50   Input ~ 0
